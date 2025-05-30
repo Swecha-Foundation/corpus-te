@@ -8,3 +8,12 @@ __pycache__/
 dist/
 build/
 *.egg-info/
+
+# Databases
+*.sqlite
+test.db
+
+# IDE / Editor specific
+.idea/
+.vscode/
+*.DS_Store
