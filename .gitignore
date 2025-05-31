@@ -9,6 +9,9 @@ dist/
 build/
 *.egg-info/
 
+.env
+logs/
+
 # Databases
 *.sqlite
 test.db
