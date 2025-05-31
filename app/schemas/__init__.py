@@ -1,0 +1,148 @@
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from uuid import UUID
+from datetime import date, datetime
+from enum import Enum
+from typing import Optional, List
+
+class RoleEnum(str, Enum):
+    admin = "admin"
+    user = "user"
+    reviewer = "reviewer"
+
+class MediaType(str, Enum):
+    text = "text"
+    audio = "audio"
+    video = "video"
+    image = "image"
+
+# Authentication schemas
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    user_id: Optional[str] = None
+
+class LoginRequest(BaseModel):
+    phone: str = Field(..., min_length=1, max_length=20)
+    password: str = Field(..., min_length=1)
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=6, max_length=100)
+
+class PasswordResetRequest(BaseModel):
+    phone: str = Field(..., min_length=1, max_length=20)
+    new_password: str = Field(..., min_length=6, max_length=100)
+
+# Role schemas
+class RoleBase(BaseModel):
+    name: RoleEnum
+    description: Optional[str] = None
+
+class RoleCreate(RoleBase):
+    pass
+
+class RoleRead(RoleBase):
+    id: int
+    model_config = ConfigDict(from_attributes=True)
+
+# User schemas
+class UserBase(BaseModel):
+    phone: str = Field(..., min_length=1, max_length=20)
+    name: str = Field(..., min_length=1, max_length=100)
+    email: Optional[EmailStr] = None
+    gender: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    place: Optional[str] = None
+
+class UserCreate(UserBase):
+    password: str = Field(..., min_length=6, max_length=100)
+    role_ids: List[int] = Field(default=[2])  # Default to user role (id=2)
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    gender: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    place: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class UserRead(UserBase):
+    id: UUID
+    is_active: bool
+    last_login_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+class UserWithRoles(UserRead):
+    roles: List[RoleRead] = []
+
+# User role management schemas
+class UserRoleAssignment(BaseModel):
+    user_id: UUID
+    role_ids: List[int]
+
+class UserRoleResponse(BaseModel):
+    user_id: UUID
+    roles: List[RoleRead]
+    model_config = ConfigDict(from_attributes=True)
+
+# Category schemas
+class CategoryBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    title: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = None
+    published: bool = False
+    rank: int = 0
+
+class CategoryCreate(CategoryBase):
+    pass
+
+class CategoryUpdate(BaseModel):
+    name: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    published: Optional[bool] = None
+    rank: Optional[int] = None
+
+class CategoryRead(CategoryBase):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+# Record schemas
+class RecordBase(BaseModel):
+    type: MediaType
+    geo_lat: Optional[float] = Field(None, ge=-90, le=90)
+    geo_lng: Optional[float] = Field(None, ge=-180, le=180)
+
+class RecordCreate(RecordBase):
+    user_id: UUID
+    category_id: UUID
+
+class RecordUpdate(BaseModel):
+    type: Optional[MediaType] = None
+    storage_path: Optional[str] = None
+    status: Optional[str] = None
+    geo_lat: Optional[float] = Field(None, ge=-90, le=90)
+    geo_lng: Optional[float] = Field(None, ge=-180, le=180)
+
+class RecordRead(RecordBase):
+    uid: UUID
+    storage_path: Optional[str] = None
+    status: str
+    user_id: UUID
+    category_id: UUID
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+# Response schemas
+class MessageResponse(BaseModel):
+    message: str
+
+class ErrorResponse(BaseModel):
+    detail: str
