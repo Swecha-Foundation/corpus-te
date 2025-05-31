@@ -20,6 +20,15 @@ def setup_logging(level: str = "INFO"):
         ]
     )
     
-    # Set specific loggers
+    # Set specific loggers to reduce noise
     logging.getLogger("uvicorn").setLevel(logging.WARNING)
+    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
     logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+    
+    # Suppress watchfiles INFO messages (common in development with reload=True)
+    logging.getLogger("watchfiles").setLevel(logging.WARNING)
+    logging.getLogger("watchfiles.main").setLevel(logging.WARNING)
+    
+    # Also suppress other common development noise
+    logging.getLogger("asyncio").setLevel(logging.WARNING)
+    logging.getLogger("multipart").setLevel(logging.WARNING)

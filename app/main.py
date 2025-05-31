@@ -11,7 +11,7 @@ from app.db.session import create_db_and_tables
 from app.api.v1.api import api_router
 
 # Setup logging
-setup_logging()
+setup_logging(settings.LOG_LEVEL)
 logger = logging.getLogger(__name__)
 
 @asynccontextmanager

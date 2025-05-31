@@ -43,7 +43,7 @@ class Settings:
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
     # Logging
-    LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
+    LOG_LEVEL: str = os.getenv("LOG_LEVEL", "WARNING")
     
     # File upload settings
     MAX_FILE_SIZE: int = 100 * 1024 * 1024  # 100MB
