@@ -97,10 +97,11 @@ corpus-te/
    ```
 
 6. **Generate a secure secret key for JWT:**
+   For Bash
    ```bash
    openssl rand -hex 32
    ```
-   OR
+   OR using Python
    ```python
          import secrets
          secrets.token_urlsafe(32)
