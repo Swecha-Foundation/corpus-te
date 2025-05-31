@@ -155,26 +155,7 @@ python -c "import secrets; print(secrets.token_urlsafe(64))"
 openssl rand -base64 64
 ```
 
-## Step 5: Install Application Dependencies
-
-```bash
-# Navigate to project directory
-cd corpus-te
-
-# Create virtual environment
-uv venv
-
-# Activate virtual environment
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
-uv pip install -e .
-
-# Install development dependencies (optional)
-uv pip install -e ".[dev]"
-```
-
-## Step 6: Database Schema Setup with Alembic
+## Step 5: Database Schema Setup with Alembic
 
 ### Initialize Alembic (if not already done)
 ```bash
@@ -243,37 +224,6 @@ You should see output similar to:
   1 | admin    | Administrator role with full access
   2 | user     | Standard user role with basic access
   3 | reviewer | Reviewer role with record review permissions
-```
-
-## Step 7: Test the Application
-
-### Start the application:
-```bash
-# Method 1: Using uvicorn directly
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-
-# Method 2: Using the main.py entry point
-python main.py
-```
-
-### Test API endpoints:
-```bash
-# Test health check
-curl http://localhost:8000/health
-
-# View API documentation
-# Open in browser: http://localhost:8000/docs
-
-# Test user creation
-curl -X POST "http://localhost:8000/api/v1/users/" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "phone": "1234567890",
-    "name": "Test User",
-    "email": "test@example.com",
-    "password": "testpass123",
-    "role_ids": [2]
-  }'
 ```
 
 ## Step 8: Database Management Commands

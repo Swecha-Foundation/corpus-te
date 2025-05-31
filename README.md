@@ -96,12 +96,37 @@ corpus-te/
    # Edit .env with your configuration (see Configuration section below)
    ```
 
-6. **Run database migrations:**
+6. **Set up PostgreSQL database with automated script (Recommended):**
+   
+   Use the provided setup script to automatically create the database and run initial setup:
+   
+   ```bash
+   # Run complete database setup (recommended for first-time setup)
+   python setup_postgresql.py --all
+   ```
+   
+   Or run individual steps:
+   ```bash
+   # Test PostgreSQL connection
+   python setup_postgresql.py --test-connection
+   
+   # Create database if it doesn't exist
+   python setup_postgresql.py --create-db
+   
+   # Run database migrations
+   python setup_postgresql.py --migrate
+   
+   # Seed initial data (roles)
+   python setup_postgresql.py --seed
+   ```
+   
+   **Alternative: Manual database setup:**
+   
+   If you prefer manual setup, see [POSTGRESQL_SETUP.md](POSTGRESQL_SETUP.md) for detailed PostgreSQL installation and setup instructions, then run:
    ```bash
    alembic upgrade head
    ```
 
-7. **Run the application:**
 7. **Run the application:**
    ```bash
    python main.py
@@ -128,7 +153,40 @@ uv pip install -e ".[dev]"
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
+### PostgreSQL Setup Script
+
+The `setup_postgresql.py` script provides automated database setup and testing functionality:
+
+```bash
+# Show current database configuration
+python setup_postgresql.py
+
+# Run complete setup (creates DB, runs migrations, seeds data)
+python setup_postgresql.py --all
+
+# Individual operations:
+python setup_postgresql.py --test-connection    # Test PostgreSQL server connection
+python setup_postgresql.py --create-db          # Create database if missing
+python setup_postgresql.py --migrate            # Run Alembic migrations
+python setup_postgresql.py --seed               # Seed initial roles data
+```
+
+**What the script does:**
+- **Connection Testing**: Verifies PostgreSQL server accessibility
+- **Database Creation**: Creates the target database if it doesn't exist
+- **Migration Execution**: Runs all pending Alembic migrations
+- **Data Seeding**: Creates initial roles (admin, user, reviewer)
+- **Error Handling**: Provides clear feedback on setup status
+
+**Prerequisites:**
+- PostgreSQL server running and accessible
+- Correct database credentials in `.env` file
+- `psycopg2-binary` installed (included in project dependencies)
+
 ### Database migrations:
+
+Before running the migrations check [POSTGRESQL_SETUP.md](POSTGRESQL_SETUP.md) for PostgreSQL setup.
+
 ```bash
 # Create new migration
 alembic revision --autogenerate -m "description"
@@ -316,6 +374,72 @@ curl -X POST "http://localhost:8000/api/v1/auth/login" \
 curl -X GET "http://localhost:8000/api/v1/users/" \
   -H "Authorization: Bearer <your-token-here>"
 ```
+
+## Troubleshooting
+
+### PostgreSQL Setup Issues
+
+**Database Connection Fails:**
+```bash
+# Check if PostgreSQL is running
+sudo systemctl status postgresql
+
+# Test connection manually
+psql -h localhost -U postgres -d postgres
+```
+
+**Setup Script Issues:**
+```bash
+# Check database configuration
+python setup_postgresql.py
+
+# Run with verbose output
+python setup_postgresql.py --test-connection
+```
+
+**Common Error Solutions:**
+
+1. **"PostgreSQL server connection failed"**
+   - Ensure PostgreSQL is installed and running
+   - Check credentials in `.env` file
+   - Verify host and port settings
+
+2. **"Database connection failed"**
+   - Run `python setup_postgresql.py --create-db` first
+   - Check if database name matches `.env` configuration
+
+3. **"Migration failed"**
+   - Ensure database exists and is accessible
+   - Check for conflicting migrations with `alembic current`
+   - Reset migrations if needed: `alembic downgrade base`
+
+4. **"Permission denied"**
+   - Ensure PostgreSQL user has CREATE DATABASE privileges
+   - Check PostgreSQL authentication settings in `pg_hba.conf`
+
+**Database Reset (Development Only):**
+```bash
+# Drop and recreate database
+psql -h localhost -U postgres -c "DROP DATABASE IF EXISTS corpus_te;"
+python setup_postgresql.py --all
+```
+
+### Application Issues
+
+**Import Errors:**
+- Ensure virtual environment is activated
+- Install dependencies: `uv sync --dev`
+
+**Port Already in Use:**
+```bash
+# Find process using port 8000
+lsof -i :8000
+
+# Kill process
+kill -9 <PID>
+```
+
+For more detailed troubleshooting, see [POSTGRESQL_SETUP.md](POSTGRESQL_SETUP.md).
 
 ## Contributing
 

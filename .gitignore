@@ -16,6 +16,11 @@ logs/
 *.sqlite
 test.db
 
+# Generated documentation files
+*er_diagram*
+*_er_*
+*.dot
+
 # IDE / Editor specific
 .idea/
 .vscode/
