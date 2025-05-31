@@ -34,10 +34,15 @@ def test_postgres_connection():
         
         with engine.connect() as conn:
             result = conn.execute(text("SELECT version()"))
-            version = result.fetchone()[0]
-            print(f"✅ PostgreSQL server connection successful!")
-            print(f"   Version: {version}")
-            return True
+            version_row = result.fetchone()
+            if version_row and len(version_row) > 0:
+                version = version_row[0]
+                print(f"✅ PostgreSQL server connection successful!")
+                print(f"   Version: {version}")
+                return True
+            else:
+                print("❌ Could not get PostgreSQL version")
+                return False
     except Exception as e:
         print(f"❌ PostgreSQL server connection failed: {e}")
         print("   Make sure PostgreSQL is running and credentials are correct.")
@@ -91,9 +96,14 @@ def test_database_connection():
         engine = create_engine(settings.DATABASE_URL)
         with engine.connect() as conn:
             result = conn.execute(text("SELECT current_database()"))
-            db_name = result.fetchone()[0]
-            print(f"✅ Database '{db_name}' connection successful!")
-            return True
+            db_row = result.fetchone()
+            if db_row and len(db_row) > 0:
+                db_name = db_row[0]
+                print(f"✅ Database '{db_name}' connection successful!")
+                return True
+            else:
+                print("❌ Could not get current database name")
+                return False
     except Exception as e:
         print(f"❌ Database connection failed: {e}")
         return False
@@ -120,11 +130,13 @@ def seed_initial_data():
     """Seed initial roles data."""
     try:
         from app.models import Role, RoleEnum
-        from app.db.session import SessionLocal
+        from app.db.session import engine
+        from sqlmodel import Session
         
-        with SessionLocal() as session:
+        with Session(engine) as session:
             # Check if roles already exist
-            existing_roles = session.query(Role).count()
+            from sqlmodel import select
+            existing_roles = len(session.exec(select(Role)).all())
             if existing_roles > 0:
                 print(f"✅ Roles already exist ({existing_roles} roles found).")
                 return True
