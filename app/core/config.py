@@ -1,33 +1,54 @@
-from pydantic_settings import BaseSettings
+import os
 from typing import Optional
 
-class Settings(BaseSettings):
-    PROJECT_NAME: str = "FastAPI Backend App"
+# Load environment variables from .env if it exists
+from dotenv import load_dotenv
+load_dotenv()
+
+class Settings:
+    # Project settings
+    PROJECT_NAME: str = os.getenv("PROJECT_NAME", "Telugu Corpus Collections API")
+    VERSION: str = "0.1.0"
     API_V1_STR: str = "/api/v1"
-
-    # Database settings
-    DATABASE_URL: str = "sqlite:///./test.db" 
-    # Example for PostgreSQL: DATABASE_URL: str = "postgresql://user:password@host:port/dbname"
-
-    # MinIO settings
-    MINIO_ENDPOINT: Optional[str] = None # e.g., "minio.example.com:9000" or "localhost:9000"
-    MINIO_ACCESS_KEY: Optional[str] = None
-    MINIO_SECRET_KEY: Optional[str] = None
-    MINIO_BUCKET_RECORDS_DEV: str = "records-dev"
-    MINIO_BUCKET_RECORDS_PROD: str = "records-prod"
-    MINIO_USE_SSL: bool = True # Set to False for local MinIO without SSL
-
-    # JWT settings
-    JWT_SECRET_KEY: str = "a_very_secret_key_that_should_be_changed" # IMPORTANT: Change this in production!
-    JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30 # Access token validity in minutes
-    OTP_EXPIRE_MINUTES: int = 5 # OTP validity in minutes
     
-    # Add other settings as needed
-
-    class Config:
-        env_file = ".env" # pydantic-settings will automatically load from .env if python-dotenv is installed
-        env_file_encoding = 'utf-8'
-        extra = 'ignore' # Ignore extra fields from .env
+    # Database settings - Individual components for PostgreSQL
+    DB_HOST: str = os.getenv("DB_HOST", "localhost")
+    DB_PORT: str = os.getenv("DB_PORT", "5432")
+    DB_NAME: str = os.getenv("DB_NAME", "corpus_te")
+    DB_USER: str = os.getenv("DB_USER", "postgres")
+    DB_PASSWORD: str = os.getenv("DB_PASSWORD", "password")
+    
+    # Database URL - prefer from environment, fallback to constructed
+    DATABASE_URL: str = os.getenv("DATABASE_URL", f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
+    
+    # CORS settings
+    @property
+    def cors_origins(self) -> list[str]:
+        """Get CORS origins from environment or use defaults."""
+        cors_str = os.getenv("BACKEND_CORS_ORIGINS")
+        if cors_str:
+            return [origin.strip() for origin in cors_str.split(",")]
+        return ["*"]
+    
+    # MinIO/S3 settings
+    MINIO_ENDPOINT: Optional[str] = os.getenv("HZ_OBJ_ENDPOINT")
+    MINIO_ACCESS_KEY: Optional[str] = os.getenv("HZ_OBJ_ACCESS_KEY")
+    MINIO_SECRET_KEY: Optional[str] = os.getenv("HZ_OBJ_SECRET_KEY")
+    MINIO_BUCKET_NAME: str = os.getenv("HZ_OBJ_BUCKET_NAME", "corpus-data")
+    MINIO_USE_SSL: bool = False
+    
+    # JWT settings
+    SECRET_KEY: str = os.getenv("APP_SECRET_KEY", "change-in-production")
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    
+    # Logging
+    LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
+    
+    # File upload settings
+    MAX_FILE_SIZE: int = 100 * 1024 * 1024  # 100MB
+    ALLOWED_AUDIO_EXTENSIONS: set[str] = {".mp3", ".wav", ".m4a", ".ogg"}
+    ALLOWED_VIDEO_EXTENSIONS: set[str] = {".mp4", ".avi", ".mov", ".mkv"}
+    ALLOWED_IMAGE_EXTENSIONS: set[str] = {".jpg", ".jpeg", ".png", ".gif"}
 
 settings = Settings()
