@@ -1,10 +1,19 @@
 # app/models/role.py
-from sqlalchemy import Column, Integer, String
-from app.db.base_class import Base
+from sqlmodel import SQLModel, Field, Relationship
+from typing import Optional, List, TYPE_CHECKING
+import enum
 
-class Role(Base):
-    __tablename__ = "roles"
+if TYPE_CHECKING:
+    from .user import User
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    name = Column(String(50), unique=True, index=True, nullable=False) # e.g., "admin", "user"
-    description = Column(String(255), nullable=True)
+class RoleEnum(str, enum.Enum):
+    admin = "admin"
+    user = "user"
+    reviewer = "reviewer"
+
+class Role(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: RoleEnum = Field(unique=True, index=True)
+    description: Optional[str] = Field(default=None, max_length=255)
+    
+    # Many-to-many relationship with users (will be defined after UserRoleLink import)
