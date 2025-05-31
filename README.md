@@ -96,10 +96,26 @@ corpus-te/
    # Edit .env with your configuration (see Configuration section below)
    ```
 
+6. **Generate a secure secret key for JWT:**
+   ```bash
+   openssl rand -hex 32
+   ```
+   OR
+   ```python
+         import secrets
+         secrets.token_urlsafe(32)
+   ```
+   Update the `APP_SECRET_KEY` in your `.env` file with the generated key.
+
+   Example:
+   ```bash
+   APP_SECRET_KEY="your-generated-secret-key"
+   ```
+
 6. **Set up PostgreSQL database with automated script (Recommended):**
-   
+
    Use the provided setup script to automatically create the database and run initial setup:
-   
+
    ```bash
    # Run complete database setup (recommended for first-time setup)
    python setup_postgresql.py --all
