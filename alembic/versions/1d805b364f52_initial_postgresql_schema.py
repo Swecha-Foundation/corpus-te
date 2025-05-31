@@ -21,17 +21,17 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     """Create initial PostgreSQL schema with many-to-many user-role relationship."""
     
-    # Create roles table
-    op.create_table('roles',
+    # Create role table
+    op.create_table('role',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('name', sa.Enum('admin', 'user', 'reviewer', name='roleenum'), nullable=False),
         sa.Column('description', sa.String(length=255), nullable=True),
         sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_roles_name'), 'roles', ['name'], unique=True)
+    op.create_index(op.f('ix_role_name'), 'role', ['name'], unique=True)
 
-    # Create categories table
-    op.create_table('categories',
+    # Create category table
+    op.create_table('category',
         sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('name', sa.String(length=100), nullable=False),
         sa.Column('title', sa.String(length=200), nullable=False),
@@ -42,10 +42,10 @@ def upgrade() -> None:
         sa.Column('updated_at', sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_categories_name'), 'categories', ['name'], unique=True)
+    op.create_index(op.f('ix_category_name'), 'category', ['name'], unique=True)
 
-    # Create users table
-    op.create_table('users',
+    # Create user table
+    op.create_table('user',
         sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('phone', sa.String(length=20), nullable=False),
         sa.Column('name', sa.String(length=100), nullable=False),
@@ -61,20 +61,20 @@ def upgrade() -> None:
         sa.Column('updated_at', sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
-    op.create_index(op.f('ix_users_phone'), 'users', ['phone'], unique=True)
+    op.create_index(op.f('ix_user_email'), 'user', ['email'], unique=True)
+    op.create_index(op.f('ix_user_phone'), 'user', ['phone'], unique=True)
 
     # Create user_roles association table (many-to-many)
     op.create_table('user_roles',
         sa.Column('user_id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('role_id', sa.Integer(), nullable=False),
-        sa.ForeignKeyConstraint(['role_id'], ['roles.id'], ),
-        sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+        sa.ForeignKeyConstraint(['role_id'], ['role.id'], ),
+        sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
         sa.PrimaryKeyConstraint('user_id', 'role_id')
     )
 
-    # Create records table
-    op.create_table('records',
+    # Create record table
+    op.create_table('record',
         sa.Column('uid', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('type', sa.Enum('text', 'audio', 'video', 'image', name='mediatype'), nullable=False),
         sa.Column('user_id', postgresql.UUID(as_uuid=True), nullable=False),
@@ -88,17 +88,17 @@ def upgrade() -> None:
         sa.Column('reviewed_at', sa.DateTime(), nullable=True),
         sa.Column('created_at', sa.DateTime(), nullable=True),
         sa.Column('updated_at', sa.DateTime(), nullable=True),
-        sa.ForeignKeyConstraint(['category_id'], ['categories.id'], ),
-        sa.ForeignKeyConstraint(['reviewed_by'], ['users.id'], ),
-        sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+        sa.ForeignKeyConstraint(['category_id'], ['category.id'], ),
+        sa.ForeignKeyConstraint(['reviewed_by'], ['user.id'], ),
+        sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
         sa.PrimaryKeyConstraint('uid')
     )
 
 
 def downgrade() -> None:
     """Drop all tables."""
-    op.drop_table('records')
+    op.drop_table('record')
     op.drop_table('user_roles')
-    op.drop_table('users')
-    op.drop_table('categories')
-    op.drop_table('roles')
+    op.drop_table('user')
+    op.drop_table('category')
+    op.drop_table('role')
