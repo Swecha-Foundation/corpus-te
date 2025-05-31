@@ -7,6 +7,10 @@ from sqlalchemy import pool
 
 from alembic import context
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
+
 # Make sure the app directory is in the path
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -23,12 +27,10 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from app.db.base_class import Base
-from app.models.role import Role # Ensure Role model is imported
-from app.models.user import User # Ensure User model is imported (and any other models you've created)
-# Add other model imports here as they are created
+from sqlmodel import SQLModel
+from app.models import Role, User, Category, Record, UserRoleLink  # Import all models
 
-target_metadata = Base.metadata
+target_metadata = SQLModel.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -48,9 +50,12 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")
-    config.set_main_option("sqlalchemy.url", DATABASE_URL) # Ensure ini is updated for offline
-    url = DATABASE_URL # Use the potentially env-overridden URL
+    # Get DATABASE_URL from environment variables
+    from app.core.config import settings
+    DATABASE_URL = settings.DATABASE_URL
+    
+    config.set_main_option("sqlalchemy.url", DATABASE_URL)
+    url = DATABASE_URL
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -69,8 +74,11 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")
-    config.set_main_option("sqlalchemy.url", DATABASE_URL) # Ensure ini is updated for online
+    # Get DATABASE_URL from environment variables
+    from app.core.config import settings
+    DATABASE_URL = settings.DATABASE_URL
+    
+    config.set_main_option("sqlalchemy.url", DATABASE_URL)
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
