@@ -8,15 +8,17 @@ from app.db.session import SessionDep
 from app.models.user import User
 from app.models.role import Role
 from app.models.associations import UserRoleLink
-from app.schemas import UserRead, UserCreate, UserUpdate, MessageResponse, UserRoleAssignment, UserRoleResponse, RoleRead, UserWithRoles
+from app.schemas import UserRead, UserCreate, UserUpdate, MessageResponse, RoleRead, UserWithRoles
 from app.core.exceptions import DuplicateEntry, UserNotFound
-from app.core.auth import get_password_hash, require_admin, get_current_active_user
+from app.core.auth import get_password_hash
+from app.core.rbac_fastapi import require_admin, require_users_read, require_users_write, require_users_update, require_users_delete
 
 router = APIRouter()
 
 @router.get("/", response_model=List[UserRead])
 async def get_users(
     session: SessionDep,
+    current_user: User = Depends(require_admin()),
     skip: int = Query(0, ge=0, description="Number of users to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Number of users to return")
 ):
@@ -26,7 +28,11 @@ async def get_users(
     return users
 
 @router.get("/{user_id}", response_model=UserRead)
-async def get_user(user_id: UUID, session: SessionDep):
+async def get_user(
+    user_id: UUID, 
+    session: SessionDep,
+    current_user: User = Depends(require_users_read())
+):
     """Get a specific user by ID."""
     user = session.get(User, user_id)
     if not user:
@@ -34,7 +40,11 @@ async def get_user(user_id: UUID, session: SessionDep):
     return user
 
 @router.get("/{user_id}/with-roles", response_model=UserWithRoles)
-async def get_user_with_roles(user_id: UUID, session: SessionDep):
+async def get_user_with_roles(
+    user_id: UUID, 
+    session: SessionDep,
+    current_user: User = Depends(require_users_read())
+):
     """Get a specific user by ID with their roles populated."""
     user = session.get(User, user_id)
     if not user:
@@ -50,7 +60,11 @@ async def get_user_with_roles(user_id: UUID, session: SessionDep):
     return UserWithRoles.model_validate(user_dict)
 
 @router.get("/phone/{phone}", response_model=UserRead)
-async def get_user_by_phone(phone: str, session: SessionDep):
+async def get_user_by_phone(
+    phone: str, 
+    session: SessionDep,
+    current_user: User = Depends(require_users_read())
+):
     """Get a user by phone number."""
     statement = select(User).where(User.phone == phone)
     user = session.exec(statement).first()
@@ -62,7 +76,12 @@ async def get_user_by_phone(phone: str, session: SessionDep):
     return user
 
 @router.post("/", response_model=UserRead, status_code=status.HTTP_201_CREATED)
-async def create_user(user_data: UserCreate, session: SessionDep):
+async def create_user(
+    user_data: UserCreate, 
+    session: SessionDep,
+    # Note: Create user endpoint allows registration without authentication
+    # current_user: User = Depends(require_users_write())
+):
     """Create a new user."""
     # Check if roles exist
     for role_id in user_data.role_ids:
@@ -112,7 +131,12 @@ async def create_user(user_data: UserCreate, session: SessionDep):
     return user
 
 @router.put("/{user_id}", response_model=UserRead)
-async def update_user(user_id: UUID, user_update: UserUpdate, session: SessionDep):
+async def update_user(
+    user_id: UUID, 
+    user_update: UserUpdate, 
+    session: SessionDep,
+    current_user: User = Depends(require_users_update())
+):
     """Update a user."""
     user = session.get(User, user_id)
     if not user:
@@ -137,7 +161,11 @@ async def update_user(user_id: UUID, user_update: UserUpdate, session: SessionDe
     return user
 
 @router.delete("/{user_id}", response_model=MessageResponse)
-async def delete_user(user_id: UUID, session: SessionDep):
+async def delete_user(
+    user_id: UUID, 
+    session: SessionDep,
+    current_user: User = Depends(require_users_delete())
+):
     """Delete a user."""
     user = session.get(User, user_id)
     if not user:
@@ -149,7 +177,11 @@ async def delete_user(user_id: UUID, session: SessionDep):
 
 # Role management endpoints
 @router.get("/{user_id}/roles", response_model=List[RoleRead])
-async def get_user_roles(user_id: UUID, session: SessionDep):
+async def get_user_roles(
+    user_id: UUID, 
+    session: SessionDep,
+    current_user: User = Depends(require_users_read())
+):
     """Get all roles assigned to a user."""
     user = session.get(User, user_id)
     if not user:
@@ -161,7 +193,12 @@ async def get_user_roles(user_id: UUID, session: SessionDep):
     return roles
 
 @router.post("/{user_id}/roles", response_model=List[RoleRead])
-async def assign_roles_to_user(user_id: UUID, role_ids: List[int], session: SessionDep):
+async def assign_roles_to_user(
+    user_id: UUID, 
+    role_ids: List[int], 
+    session: SessionDep,
+    current_user: User = Depends(require_users_write())
+):
     """Assign roles to a user."""
     user = session.get(User, user_id)
     if not user:
@@ -195,7 +232,12 @@ async def assign_roles_to_user(user_id: UUID, role_ids: List[int], session: Sess
     return roles
 
 @router.put("/{user_id}/roles/add", response_model=List[RoleRead])
-async def add_role_to_user(user_id: UUID, role_id: int, session: SessionDep):
+async def add_role_to_user(
+    user_id: UUID, 
+    role_id: int, 
+    session: SessionDep,
+    current_user: User = Depends(require_users_update())
+):
     """Add a single role to a user (keeping existing roles)."""
     user = session.get(User, user_id)
     if not user:
@@ -227,7 +269,12 @@ async def add_role_to_user(user_id: UUID, role_id: int, session: SessionDep):
     return roles
 
 @router.delete("/{user_id}/roles/{role_id}", response_model=List[RoleRead])
-async def remove_role_from_user(user_id: UUID, role_id: int, session: SessionDep):
+async def remove_role_from_user(
+    user_id: UUID, 
+    role_id: int, 
+    session: SessionDep,
+    current_user: User = Depends(require_users_delete())
+):
     """Remove a role from a user."""
     user = session.get(User, user_id)
     if not user:
