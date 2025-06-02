@@ -17,7 +17,8 @@ dependencies = [
     "python-multipart",
     "celery",
     "python-dotenv",
-    "email-validator"
+    "email-validator",
+    "sqlalchemy"
 ]
 
 [project.optional-dependencies]

@@ -11,7 +11,7 @@ router = APIRouter()
 def get_categories(session: SessionDep) -> List[Category]:
     """Get all categories."""
     categories = session.exec(select(Category)).all()
-    return categories
+    return list(categories)
 
 @router.get("/{category_id}", response_model=Category)
 def get_category(category_id: int, session: SessionDep) -> Category:
