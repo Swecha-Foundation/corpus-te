@@ -4,17 +4,26 @@ from sqlmodel import Session, select
 
 from app.db.session import SessionDep
 from app.models.category import Category
+from app.models.user import User
+from app.core.rbac_fastapi import require_any_role, require_admin
 
 router = APIRouter()
 
 @router.get("/", response_model=List[Category])
-def get_categories(session: SessionDep) -> List[Category]:
+def get_categories(
+    session: SessionDep,
+    current_user: User = Depends(require_any_role())
+    ) -> List[Category]:
     """Get all categories."""
     categories = session.exec(select(Category)).all()
     return list(categories)
 
 @router.get("/{category_id}", response_model=Category)
-def get_category(category_id: int, session: SessionDep) -> Category:
+def get_category(
+    category_id: str, 
+    session: SessionDep,
+    current_user: User = Depends(require_any_role())
+    ) -> Category:
     """Get a specific category by ID."""
     category = session.get(Category, category_id)
     if not category:
@@ -22,7 +31,11 @@ def get_category(category_id: int, session: SessionDep) -> Category:
     return category
 
 @router.post("/", response_model=Category, status_code=201)
-def create_category(category_data: Category, session: SessionDep) -> Category:
+def create_category(
+    category_data: Category,
+    session: SessionDep,
+    current_user: User = Depends(require_admin())
+) -> Category:
     """Create a new category."""
     # Check if category with same name already exists
     existing = session.exec(
@@ -39,7 +52,12 @@ def create_category(category_data: Category, session: SessionDep) -> Category:
     return category
 
 @router.put("/{category_id}", response_model=Category)
-def update_category(category_id: int, category_data: Category, session: SessionDep) -> Category:
+def update_category(
+    category_id: str, 
+    category_data: Category, 
+    session: SessionDep,
+    current_user: User = Depends(require_admin())
+    ) -> Category:
     """Update a category."""
     category = session.get(Category, category_id)
     if not category:
@@ -66,7 +84,11 @@ def update_category(category_id: int, category_data: Category, session: SessionD
     return category
 
 @router.delete("/{category_id}")
-def delete_category(category_id: int, session: SessionDep) -> dict:
+def delete_category(
+    category_id: str, 
+    session: SessionDep,
+    current_user: User = Depends(require_admin())
+    ) -> dict:
     """Delete a category."""
     category = session.get(Category, category_id)
     if not category:

@@ -11,7 +11,7 @@ from app.models.associations import UserRoleLink
 from app.schemas import UserRead, UserCreate, UserUpdate, MessageResponse, RoleRead, UserWithRoles
 from app.core.exceptions import DuplicateEntry, UserNotFound
 from app.core.auth import get_password_hash
-from app.core.rbac_fastapi import require_admin, require_users_read, require_users_write, require_users_update, require_users_delete
+from app.core.rbac_fastapi import create_rbac_dependency, require_admin, require_users_read, require_users_write, require_users_update, require_users_delete
 
 router = APIRouter()
 
@@ -31,7 +31,7 @@ async def get_users(
 async def get_user(
     user_id: UUID, 
     session: SessionDep,
-    current_user: User = Depends(require_users_read())
+    current_user: User = Depends(create_rbac_dependency(roles=["admin", "reviewer"]))
 ):
     """Get a specific user by ID."""
     user = session.get(User, user_id)
