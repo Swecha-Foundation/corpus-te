@@ -6,6 +6,8 @@ import uuid
 
 from app.db.session import SessionDep
 from app.models.record import Record, MediaType
+from app.core.rbac_fastapi import require_any_role, require_admin, create_rbac_dependency
+from app.models.user import User
 
 router = APIRouter()
 
@@ -14,7 +16,8 @@ def get_records(
     session: SessionDep,
     category_id: Optional[UUID] = None,
     user_id: Optional[UUID] = None,
-    media_type: Optional[MediaType] = None
+    media_type: Optional[MediaType] = None,
+    current_user: User = Depends(create_rbac_dependency(roles=["admin", "reviewer"]))
 ) -> List[Record]:
     """Get all records with optional filtering."""
     query = select(Record)
