@@ -107,7 +107,8 @@ async def change_password(
 @router.post("/reset-password", response_model=MessageResponse)
 async def reset_password(
     reset_data: PasswordResetRequest,
-    session: SessionDep
+    session: SessionDep,
+    current_user: User = Depends(get_current_active_user)
 ):
     """Reset user password (admin functionality - should be protected in production)."""
     statement = select(User).where(User.phone == reset_data.phone)

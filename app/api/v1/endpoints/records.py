@@ -33,7 +33,11 @@ def get_records(
     return list(records)
 
 @router.get("/{record_id}", response_model=Record)
-def get_record(record_id: str, session: SessionDep) -> Record:
+def get_record(
+    record_id: str, 
+    session: SessionDep,
+    current_user: User = Depends(create_rbac_dependency(roles=["admin", "reviewer"]))
+    ) -> Record:
     """Get a specific record by ID."""
     try:
         record_uuid = uuid.UUID(record_id)
@@ -46,7 +50,11 @@ def get_record(record_id: str, session: SessionDep) -> Record:
     return record
 
 @router.post("/", response_model=Record, status_code=201)
-def create_record(record_data: Record, session: SessionDep) -> Record:
+def create_record(
+    record_data: Record, 
+    session: SessionDep,
+    current_user: User = Depends(require_any_role())
+) -> Record:
     """Create a new record."""
     # Validate foreign keys exist
     from app.models.category import Category
@@ -85,7 +93,8 @@ async def upload_record(
     category_id: str = Form(...),
     user_id: str = Form(...),
     media_type: MediaType = Form(...),
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    current_user: User = Depends(require_any_role())
 ) -> Record:
     """Upload a file and create a record."""
     # Validate file
@@ -137,7 +146,12 @@ async def upload_record(
     return record_data
 
 @router.put("/{record_id}", response_model=Record)
-def update_record(record_id: str, record_data: Record, session: SessionDep) -> Record:
+def update_record(
+    record_id: str, 
+    record_data: Record, 
+    session: SessionDep,
+    current_user: User = Depends(create_rbac_dependency(roles=["admin", "reviewer"]))
+    ) -> Record:
     """Update a record."""
     try:
         record_uuid = uuid.UUID(record_id)
@@ -194,7 +208,11 @@ def update_record(record_id: str, record_data: Record, session: SessionDep) -> R
     return record
 
 @router.delete("/{record_id}")
-def delete_record(record_id: str, session: SessionDep) -> dict:
+def delete_record(
+    record_id: str, 
+    session: SessionDep,
+    current_user: User = Depends(require_admin())
+) -> dict:
     """Delete a record."""
     try:
         record_uuid = uuid.UUID(record_id)
