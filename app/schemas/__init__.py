@@ -4,6 +4,9 @@ from datetime import date, datetime
 from enum import Enum
 from typing import Optional, List
 
+# Import geographic schemas
+from .geo_schemas import Coordinates, LocationSearch, BoundingBox
+
 class RoleEnum(str, Enum):
     admin = "admin"
     user = "user"
@@ -115,25 +118,37 @@ class CategoryRead(CategoryBase):
 
 # Record schemas
 class RecordBase(BaseModel):
-    type: MediaType
-    geo_lat: Optional[float] = Field(None, ge=-90, le=90)
-    geo_lng: Optional[float] = Field(None, ge=-180, le=180)
+    title: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = Field(None, max_length=1000)
+    media_type: MediaType
+    file_url: Optional[str] = Field(None, max_length=500)
+    file_name: Optional[str] = Field(None, max_length=255)
+    file_size: Optional[int] = Field(None, ge=0)
+    status: str = Field(default="pending", max_length=20)
+    location: Optional[Coordinates] = None  # PostGIS Point coordinates
+    reviewed: bool = Field(default=False)
+    reviewed_by: Optional[UUID] = None
+    reviewed_at: Optional[datetime] = None
 
 class RecordCreate(RecordBase):
     user_id: UUID
     category_id: UUID
 
 class RecordUpdate(BaseModel):
-    type: Optional[MediaType] = None
-    storage_path: Optional[str] = None
-    status: Optional[str] = None
-    geo_lat: Optional[float] = Field(None, ge=-90, le=90)
-    geo_lng: Optional[float] = Field(None, ge=-180, le=180)
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = Field(None, max_length=1000)
+    media_type: Optional[MediaType] = None
+    file_url: Optional[str] = Field(None, max_length=500)
+    file_name: Optional[str] = Field(None, max_length=255)
+    file_size: Optional[int] = Field(None, ge=0)
+    status: Optional[str] = Field(None, max_length=20)
+    location: Optional[Coordinates] = None  # PostGIS Point coordinates
+    reviewed: Optional[bool] = None
+    reviewed_by: Optional[UUID] = None
+    reviewed_at: Optional[datetime] = None
 
 class RecordRead(RecordBase):
     uid: UUID
-    storage_path: Optional[str] = None
-    status: str
     user_id: UUID
     category_id: UUID
     created_at: datetime
