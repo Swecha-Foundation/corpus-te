@@ -19,7 +19,9 @@ dependencies = [
     "python-dotenv",
     "email-validator",
     "sqlalchemy",
-    "requests"
+    "requests",
+    "geoalchemy2",
+    "shapely>=2.1.1",
 ]
 
 [project.optional-dependencies]
