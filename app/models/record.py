@@ -2,9 +2,11 @@
 import uuid as uuid_pkg
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, TYPE_CHECKING
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID
 import enum
+from geoalchemy2 import Geometry
+from sqlalchemy import Column
 
 if TYPE_CHECKING:
     from .user import User
@@ -31,9 +33,12 @@ class Record(SQLModel, table=True):
     
     status: str = Field(default="pending", max_length=20)  # pending/uploaded/failed
 
-    # Location data
-    geo_lat: Optional[float] = Field(default=None)
-    geo_lng: Optional[float] = Field(default=None)
+    # Location data using PostGIS Point geometry
+    # SRID 4326 is WGS84 (latitude/longitude coordinates)
+    location: Optional[bytes] = Field(
+        default=None,
+        sa_column=Column(Geometry("POINT", srid=4326))
+    )
 
     # Foreign keys
     user_id: UUID = Field(foreign_key="user.id")
@@ -41,8 +46,8 @@ class Record(SQLModel, table=True):
     reviewed: bool = Field(default=False)
     reviewed_by: Optional[UUID] = Field(default=None, foreign_key="user.id")
 
-    created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
-    updated_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
     reviewed_at: Optional[datetime] = Field(default=None)
 
     # Relationships - explicitly specify foreign keys to avoid ambiguity
