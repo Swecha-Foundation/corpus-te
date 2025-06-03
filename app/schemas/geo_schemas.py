@@ -1,0 +1,78 @@
+"""
+Geographic coordinate schemas for PostGIS integration
+"""
+
+from pydantic import BaseModel, Field, validator
+from typing import Optional
+
+
+class Coordinates(BaseModel):
+    """Geographic coordinates (latitude, longitude) schema"""
+    latitude: float = Field(..., ge=-90, le=90, description="Latitude in decimal degrees")
+    longitude: float = Field(..., ge=-180, le=180, description="Longitude in decimal degrees")
+    
+    @validator('latitude')
+    def validate_latitude(cls, v):
+        if not -90 <= v <= 90:
+            raise ValueError('Latitude must be between -90 and 90 degrees')
+        return v
+    
+    @validator('longitude')
+    def validate_longitude(cls, v):
+        if not -180 <= v <= 180:
+            raise ValueError('Longitude must be between -180 and 180 degrees')
+        return v
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "latitude": 17.3850,
+                "longitude": 78.4867
+            }
+        }
+
+
+class LocationSearch(BaseModel):
+    """Schema for location-based search queries"""
+    latitude: float = Field(..., ge=-90, le=90)
+    longitude: float = Field(..., ge=-180, le=180)
+    radius_meters: int = Field(default=1000, ge=1, le=100000, description="Search radius in meters")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "latitude": 17.3850,
+                "longitude": 78.4867,
+                "radius_meters": 5000
+            }
+        }
+
+
+class BoundingBox(BaseModel):
+    """Schema for bounding box searches"""
+    min_latitude: float = Field(..., ge=-90, le=90)
+    min_longitude: float = Field(..., ge=-180, le=180)
+    max_latitude: float = Field(..., ge=-90, le=90)
+    max_longitude: float = Field(..., ge=-180, le=180)
+    
+    @validator('max_latitude')
+    def validate_max_latitude(cls, v, values):
+        if 'min_latitude' in values and v <= values['min_latitude']:
+            raise ValueError('max_latitude must be greater than min_latitude')
+        return v
+    
+    @validator('max_longitude')
+    def validate_max_longitude(cls, v, values):
+        if 'min_longitude' in values and v <= values['min_longitude']:
+            raise ValueError('max_longitude must be greater than min_longitude')
+        return v
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "min_latitude": 17.3000,
+                "min_longitude": 78.4000,
+                "max_latitude": 17.4700,
+                "max_longitude": 78.5734
+            }
+        }
