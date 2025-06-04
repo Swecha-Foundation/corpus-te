@@ -20,6 +20,7 @@ from app.utils.postgis_utils import (
     bbox_query
 )
 from app.utils.hetzner_storage import upload_file_to_hetzner, delete_file_from_hetzner
+from app.utils.record_file_generator import RecordFileGenerator
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -85,12 +86,14 @@ def get_record(
     return result
 
 @router.post("/", response_model=RecordRead, status_code=201)
-def create_record(
+async def create_record(
     record_data: RecordCreate, 
     session: SessionDep,
+    generate_file: bool = Query(False, description="Generate a sample file for this record"),
+    file_size_kb: int = Query(10, ge=1, le=1000, description="Size of generated file in KB"),
     current_user: User = Depends(require_any_role())
 ) -> RecordRead:
-    """Create a new record."""
+    """Create a new record, optionally with a generated file."""
     # Validate foreign keys exist
     from app.models.category import Category
     from app.models.user import User
@@ -111,6 +114,10 @@ def create_record(
     # Create new record
     record = Record.model_validate(record_dict)
     
+    # Set initial status
+    if generate_file:
+        record.status = "generating"
+    
     # Handle PostGIS location if provided using SQLAlchemy session
     if record_data.location:
         from sqlalchemy import text
@@ -126,11 +133,53 @@ def create_record(
         )
     else:
         session.add(record)
+    
+    session.flush()  # Ensure we have the record UID
+
+    # Generate file if requested
+    if generate_file:
+        try:
+            file_generator = RecordFileGenerator()
+            
+            # Ensure record UID is available
+            if not record.uid:
+                raise ValueError("Record UID is required for file generation")
+            
+            # Generate and upload file
+            upload_result = await file_generator.create_and_upload_file_for_record(
+                record_uid=record.uid,
+                media_type=record.media_type,
+                file_size_kb=file_size_kb,
+                custom_metadata={
+                    "title": record.title,
+                    "description": record.description or "",
+                    "user_id": str(record.user_id),
+                    "category_id": str(record.category_id),
+                    "creation_type": "api_generated"
+                }
+            )
+            
+            # Update record with file information
+            record.file_url = upload_result["object_url"]
+            # Extract filename from object_key (e.g., "text/uuid.txt" -> "uuid.txt")
+            object_key = upload_result["object_key"]
+            filename = object_key.split("/")[-1] if "/" in object_key else object_key
+            record.file_name = filename
+            record.file_size = upload_result["file_size"]
+            record.status = "generated"
+            
+            logger.info(f"Generated file for record {record.uid}: {upload_result['object_key']}")
+            
+        except Exception as e:
+            logger.error(f"Failed to generate file for record {record.uid}: {e}")
+            record.status = "generation_failed"
+            # Don't raise the exception, still create the record without the file
+    
     session.commit()
     session.refresh(record)
     
     # Convert to read schema with coordinates
-    result = RecordRead.model_validate(record)
+    result = RecordRead.model_validate(record, from_attributes=True)
     if record.location:
         coords = extract_coordinates_from_geometry(record.location)
         if coords:
@@ -149,6 +198,7 @@ async def upload_record(
     file: UploadFile = File(...),
     latitude: Optional[float] = Form(None),
     longitude: Optional[float] = Form(None),
+    use_uid_filename: bool = Form(False, description="Use record UID as filename instead of original filename"),
     current_user: User = Depends(require_any_role())
 ) -> RecordRead:
     """Upload a file and create a record."""
@@ -166,27 +216,7 @@ async def upload_record(
         user_uuid = uuid.UUID(user_id)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid user ID format")
-    
-    # Upload file to Hetzner Object Storage
-    try:
-        # Determine prefix based on media type
-        prefix = f"{media_type.value}/" if media_type else "misc/"
-        metadata = {
-            "title": title,
-            "user_id": str(user_uuid),
-            "category_id": str(category_uuid),
-            "media_type": media_type.value if media_type else "unknown"
-        }
-        
-        upload_result = await upload_file_to_hetzner(file, prefix=prefix, metadata=metadata)
-        file_url = upload_result["object_url"]
-        object_key = upload_result["object_key"]
-        actual_file_size = upload_result["file_size"]
-        
-    except Exception as e:
-        logger.error(f"Failed to upload file to Hetzner storage: {e}")
-        raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
-    
+
     # Validate foreign keys
     from app.models.category import Category
     from app.models.user import User
@@ -198,26 +228,81 @@ async def upload_record(
     user = session.get(User, user_uuid)
     if not user:
         raise HTTPException(status_code=400, detail="User not found")
-    
-    # Create record
+
+    # Create record first to get the UID
     record_data = Record(
         title=title,
         description=description,
         category_id=category_uuid,
         user_id=user_uuid,
         media_type=media_type,
-        file_url=file_url,
-        file_name=file.filename,
-        file_size=actual_file_size,
-        status="uploaded"  # Mark as uploaded since file upload succeeded
+        status="uploading"  # Temporary status during upload
     )
     
     session.add(record_data)
-    
+    session.flush()  # Get the UID for the record
+
+    # Upload file to Hetzner Object Storage
+    try:
+        if use_uid_filename:
+            # Use UID-based filename
+            file_generator = RecordFileGenerator()
+            filename = f"{record_data.uid}{file_generator.get_file_extension(media_type)}"
+        else:
+            # Use original filename
+            filename = file.filename
+        
+        # Determine prefix based on media type
+        prefix = f"{media_type.value}/" if media_type else "misc/"
+        metadata = {
+            "title": title,
+            "user_id": str(user_uuid),
+            "category_id": str(category_uuid),
+            "media_type": media_type.value if media_type else "unknown",
+            "record_uid": str(record_data.uid),
+            "original_filename": file.filename,
+            "upload_type": "user_upload"
+        }
+        
+        # Create a temporary UploadFile with the new filename if needed
+        if use_uid_filename:
+            # Read the file content
+            file_content = await file.read()
+            file.file.seek(0)  # Reset file pointer
+            
+            # Create new UploadFile with UID-based filename
+            from fastapi import UploadFile
+            from io import BytesIO
+            temp_file = BytesIO(file_content)
+            upload_file = UploadFile(
+                filename=filename,
+                file=temp_file,
+                size=len(file_content),  # Add the size parameter
+                headers=file.headers
+            )
+        else:
+            upload_file = file
+        
+        upload_result = await upload_file_to_hetzner(upload_file, prefix=prefix, metadata=metadata)
+        file_url = upload_result["object_url"]
+        object_key = upload_result["object_key"]
+        actual_file_size = upload_result["file_size"]
+        
+    except Exception as e:
+        logger.error(f"Failed to upload file to Hetzner storage: {e}")
+        # Clean up the record if upload failed
+        session.rollback()
+        raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
+
+    # Update record with file information
+    record_data.file_url = file_url
+    record_data.file_name = filename
+    record_data.file_size = actual_file_size
+    record_data.status = "uploaded"  # Mark as uploaded since file upload succeeded
+
     # Handle PostGIS location if coordinates provided using raw SQL
     if latitude is not None and longitude is not None:
         from sqlalchemy import text
-        session.flush()  # Get the ID
         session.execute(
             text("UPDATE record SET location = ST_GeomFromText(:wkt, 4326) WHERE uid = :uid"),
             {
