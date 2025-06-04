@@ -30,12 +30,12 @@ class Settings:
             return [origin.strip() for origin in cors_str.split(",")]
         return ["*"]
     
-    # MinIO/S3 settings
+    # MinIO/S3 settings (Hetzner Object Storage)
     MINIO_ENDPOINT: Optional[str] = os.getenv("HZ_OBJ_ENDPOINT")
     MINIO_ACCESS_KEY: Optional[str] = os.getenv("HZ_OBJ_ACCESS_KEY")
     MINIO_SECRET_KEY: Optional[str] = os.getenv("HZ_OBJ_SECRET_KEY")
     MINIO_BUCKET_NAME: str = os.getenv("HZ_OBJ_BUCKET_NAME", "corpus-data")
-    MINIO_USE_SSL: bool = False
+    MINIO_USE_SSL: bool = os.getenv("HZ_OBJ_USE_SSL", "true").lower() in ("true", "1", "yes")
     
     # JWT settings
     SECRET_KEY: str = os.getenv("APP_SECRET_KEY", "change-in-production")

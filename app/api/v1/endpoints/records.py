@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, Q
 from sqlmodel import Session, select
 from uuid import UUID
 import uuid
+import logging
 
 from app.db.session import SessionDep
 from app.models.record import Record, MediaType
@@ -18,8 +19,10 @@ from app.utils.postgis_utils import (
     distance_query,
     bbox_query
 )
+from app.utils.hetzner_storage import upload_file_to_hetzner, delete_file_from_hetzner
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 @router.get("/", response_model=List[RecordRead])
 def get_records(
@@ -164,9 +167,25 @@ async def upload_record(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid user ID format")
     
-    # TODO: Implement file upload to MinIO/S3
-    # For now, just create the record without actual file upload
-    file_url = f"/uploads/{file.filename}"  # Placeholder
+    # Upload file to Hetzner Object Storage
+    try:
+        # Determine prefix based on media type
+        prefix = f"{media_type.value}/" if media_type else "misc/"
+        metadata = {
+            "title": title,
+            "user_id": str(user_uuid),
+            "category_id": str(category_uuid),
+            "media_type": media_type.value if media_type else "unknown"
+        }
+        
+        upload_result = await upload_file_to_hetzner(file, prefix=prefix, metadata=metadata)
+        file_url = upload_result["object_url"]
+        object_key = upload_result["object_key"]
+        actual_file_size = upload_result["file_size"]
+        
+    except Exception as e:
+        logger.error(f"Failed to upload file to Hetzner storage: {e}")
+        raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
     
     # Validate foreign keys
     from app.models.category import Category
@@ -189,7 +208,8 @@ async def upload_record(
         media_type=media_type,
         file_url=file_url,
         file_name=file.filename,
-        file_size=file.size if file.size else 0
+        file_size=actual_file_size,
+        status="uploaded"  # Mark as uploaded since file upload succeeded
     )
     
     session.add(record_data)
@@ -280,7 +300,21 @@ def delete_record(
     if not record:
         raise HTTPException(status_code=404, detail="Record not found")
     
-    # TODO: Also delete the actual file from MinIO/S3
+    # Delete the actual file from Hetzner storage if it exists
+    if record.file_url:
+        try:
+            # Extract object key from file URL
+            # Assuming URL format: https://endpoint/bucket/object_key
+            url_parts = record.file_url.split('/')
+            if len(url_parts) >= 2:
+                object_key = '/'.join(url_parts[-2:])  # Get bucket/object_key part
+                if '/' in object_key:
+                    object_key = object_key.split('/', 1)[1]  # Remove bucket name, keep object key
+                    delete_file_from_hetzner(object_key)
+                    logger.info(f"Successfully deleted file {object_key} from storage")
+        except Exception as e:
+            logger.warning(f"Failed to delete file from storage for record {record_id}: {e}")
+            # Continue with record deletion even if file deletion fails
     
     session.delete(record)
     session.commit()
