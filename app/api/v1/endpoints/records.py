@@ -12,12 +12,8 @@ from app.models.user import User
 from app.schemas import RecordCreate, RecordUpdate, RecordRead
 from app.schemas.geo_schemas import LocationSearch, BoundingBox, Coordinates
 from app.utils.postgis_utils import (
-    create_point_geometry,
     create_point_for_record,
-    extract_coordinates_from_point,
     extract_coordinates_from_geometry,
-    distance_query,
-    bbox_query
 )
 from app.utils.hetzner_storage import upload_file_to_hetzner, delete_file_from_hetzner
 from app.utils.record_file_generator import RecordFileGenerator
