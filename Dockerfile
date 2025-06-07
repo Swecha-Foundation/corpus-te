@@ -39,6 +39,7 @@ RUN uv pip install --no-cache-dir --system \
     python-multipart \
     "celery[redis]" \
     redis \
+    flower \
     python-dotenv \
     email-validator \
     sqlalchemy \

@@ -18,6 +18,7 @@ dependencies = [
     "python-multipart",
     "celery[redis]",
     "redis",
+    "flower",
     "python-dotenv",
     "email-validator",
     "sqlalchemy",
