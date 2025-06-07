@@ -7,6 +7,7 @@ requires-python = ">=3.13"
 dependencies = [
     "fastapi",
     "uvicorn[standard]",
+    "gunicorn",
     "sqlmodel",
     "psycopg2-binary",
     "pydantic-settings",
@@ -15,7 +16,8 @@ dependencies = [
     "python-jose[cryptography]",
     "passlib[bcrypt]",
     "python-multipart",
-    "celery",
+    "celery[redis]",
+    "redis",
     "python-dotenv",
     "email-validator",
     "sqlalchemy",
