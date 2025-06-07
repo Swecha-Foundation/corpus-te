@@ -7,9 +7,10 @@ A FastAPI-based backend service for managing Telugu corpus collections, supporti
 - **Multi-media Support**: Handle text, audio, video, and image submissions
 - **User Management**: Many-to-many role-based user system (admin/user/reviewer)
 - **Authentication**: JWT-based authentication and authorization
+- **OTP Authentication**: SMS-based OTP verification for secure phone number authentication
 - **Category Management**: Organize submissions by categories
 - **Record Review System**: Support for content review workflows
-- **Geolocation**: Track submission locations
+- **Geolocation & PostGIS**: Advanced geographic data handling with spatial queries and indexing
 - **PostgreSQL Database**: Robust database with proper foreign key constraints
 - **File Storage**: Support for local and MinIO/S3 storage
 - **RESTful API**: Full CRUD operations with OpenAPI documentation
@@ -24,7 +25,8 @@ corpus-te/
 │   │   ├── config.py        # Settings and configuration
 │   │   ├── auth.py          # JWT authentication utilities
 │   │   ├── exceptions.py    # Custom exceptions
-│   │   └── logging_config.py # Logging setup
+│   │   ├── logging_config.py # Logging setup
+│   │   └── rbac_fastapi.py  # Role-based access control utilities
 │   ├── db/
 │   │   └── session.py       # Database session
 │   ├── models/
@@ -33,30 +35,100 @@ corpus-te/
 │   │   ├── user.py          # User model
 │   │   ├── role.py          # Role model
 │   │   ├── category.py      # Category model
-│   │   └── record.py        # Record model
+│   │   ├── record.py        # Record model
+│   │   └── otp.py           # OTP model for authentication
 │   ├── schemas/
-│   │   └── __init__.py      # Pydantic schemas
+│   │   ├── __init__.py      # Pydantic schemas
+│   │   ├── geo_schemas.py   # Geographic coordinate schemas
+│   │   └── otp.py           # OTP request/response schemas
 │   ├── api/
+│   │   ├── __init__.py
+│   │   ├── auth.py          # Legacy auth endpoints
 │   │   └── v1/
 │   │       ├── api.py       # API router
+│   │       ├── __init__.py
 │   │       └── endpoints/
-│   │           ├── auth.py      # Authentication endpoints
+│   │           ├── __init__.py
+│   │           ├── auth.py      # Authentication endpoints (with OTP)
 │   │           ├── users.py     # User management endpoints
 │   │           ├── roles.py     # Role management endpoints
 │   │           ├── categories.py # Category endpoints
-│   │           └── records.py   # Record endpoints
-│   └── services/            # Business logic services
+│   │           ├── records.py   # Record endpoints
+│   │           └── system_rbac.py # RBAC system endpoints
+│   ├── services/            # Business logic services
+│   │   └── otp_service.py   # OTP authentication service
+│   └── utils/               # Utility modules
+│       ├── __init__.py
+│       ├── cleanup_storage.py      # Storage cleanup utilities
+│       ├── hetzner_storage.py      # Hetzner object storage integration
+│       ├── postgis_utils.py        # PostGIS geographic utilities
+│       └── record_file_generator.py # Record file generation utilities
 ├── alembic/                 # Database migrations
 │   ├── versions/            # Migration files
 │   ├── alembic.ini          # Alembic configuration
 │   └── env.py              # Migration environment
+├── docs/                    # Documentation and guides
+│   ├── demo_rbac_optimization.py            # RBAC demo script
+│   ├── example_hetzner_storage.py           # Hetzner storage examples
+│   ├── example_record_file_generator.py     # Record generator examples
+│   ├── generate_record_files.py             # File generation script
+│   ├── otp_demo.py                          # OTP demo script
+│   ├── HETZNER_STORAGE_GUIDE.md            # Hetzner storage setup guide
+│   ├── OTP_AUTHENTICATION_GUIDE.md         # OTP authentication guide
+│   ├── OTP_IMPLEMENTATION_SUMMARY.md       # OTP implementation summary
+│   ├── OTP_TESTING_RESULTS.md              # OTP testing results
+│   ├── Plan.md                             # Project development plan
+│   ├── POSTGIS_INTEGRATION_SUMMARY.md      # PostGIS integration summary
+│   ├── POSTGRESQL_SETUP.md                 # PostgreSQL setup guide
+│   ├── RBAC_GUIDE.md                       # Role-based access control guide
+│   ├── RBAC_OPTIMIZATION_SUMMARY.md        # RBAC optimization summary
+│   ├── RECORD_FILE_GENERATOR_GUIDE.md      # Record file generator guide
+│   └── RECORD_FILE_GENERATOR_COMPLETION_SUMMARY.md # Generator completion summary
 ├── tests/                   # Test files
+│   ├── create_test_data.py              # Test data creation script
+│   ├── test_hetzner_storage.py          # Hetzner storage tests
+│   ├── test_otp_api.py                  # OTP API tests
+│   ├── test_postgis_api.py              # PostGIS API tests
+│   ├── test_postgis_integration.py      # PostGIS integration tests
+│   ├── test_updated_api_endpoints.py    # Updated API endpoint tests
+│   └── verify_test_data.py              # Test data verification
 ├── logs/                    # Application logs
 ├── main.py                  # Application entry point
+├── setup_postgresql.py      # PostgreSQL setup automation script
 ├── pyproject.toml           # Project dependencies
-├── POSTGRESQL_SETUP.md      # PostgreSQL setup guide
+├── uv.lock                  # UV dependency lock file
+├── LICENSE                  # License file
 └── README.md               # This file
 ```
+
+## Key Features
+
+### 🔐 OTP Authentication System
+Complete SMS-based One-Time Password authentication system for secure phone number verification:
+- **SMS Integration**: Real SMS delivery via Ozonetel API
+- **Security**: HMAC-SHA256 OTP hashing with salts and time-based expiry
+- **Rate Limiting**: Built-in protection against spam and abuse
+- **Phone Validation**: International phone number format validation
+- **JWT Integration**: Seamless token generation after successful verification
+
+📖 **[Detailed OTP Authentication Guide](docs/OTP_AUTHENTICATION_GUIDE.md)**
+
+### 🌍 PostGIS Geographic Integration
+Advanced spatial data handling with PostGIS for location-based features:
+- **Spatial Queries**: Efficient geographic data operations and indexing
+- **Location Services**: Precise coordinate handling and validation
+- **Performance Optimization**: Specialized indexes for geographic queries
+- **Data Integrity**: Robust validation for coordinate formats and ranges
+
+📖 **[PostGIS Integration Guide](docs/POSTGIS_INTEGRATION.md)**
+
+### 👥 Role-Based Access Control (RBAC)
+Comprehensive user management system with flexible permissions:
+- **Multi-Role Support**: Admin, User, and Reviewer roles with granular permissions
+- **Performance Optimized**: Efficient user-role queries and caching strategies
+- **Scalable Architecture**: Designed for large-scale user management
+
+📖 **[RBAC Performance Optimization Guide](docs/RBAC_PERFORMANCE_OPTIMIZATION.md)**
 
 ## Quick Start
 
