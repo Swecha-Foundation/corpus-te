@@ -89,11 +89,21 @@ if ! docker compose version &> /dev/null; then
     exit 1
 fi
 
-# Load Docker image if it exists locally
-if [ -f "../$DOCKER_IMAGE_NAME.tar" ]; then
-    print_step "Loading Docker image from file..."
-    docker load < ../$DOCKER_IMAGE_NAME.tar
-    print_success "Docker image loaded"
+# Build Docker image if source files are available
+if [ -f "Dockerfile" ]; then
+    print_step "Building Docker image..."
+    if docker build -t $DOCKER_IMAGE_NAME .; then
+        print_success "Docker image built successfully"
+    else
+        print_error "Failed to build Docker image"
+        exit 1
+    fi
+elif ! docker image inspect $DOCKER_IMAGE_NAME >/dev/null 2>&1; then
+    print_error "Docker image $DOCKER_IMAGE_NAME not found and no Dockerfile available."
+    echo "Please ensure the source code is copied to the deployment directory."
+    exit 1
+else
+    print_success "Docker image $DOCKER_IMAGE_NAME found locally"
 fi
 
 # Stop existing containers
@@ -101,16 +111,21 @@ print_step "Stopping existing containers..."
 docker compose -f $DOCKER_COMPOSE_FILE down --remove-orphans
 
 # Create database backup if containers exist
-if docker compose -f $DOCKER_COMPOSE_FILE ps postgres | grep -q postgres; then
+if docker ps --format "table {{.Names}}" | grep -q "postgres"; then
     print_step "Creating database backup..."
     BACKUP_FILE="$BACKUP_DIR/backup_$(date +%Y%m%d_%H%M%S).sql"
-    docker compose -f $DOCKER_COMPOSE_FILE exec -T postgres pg_dump -U postgres corpus_te > $BACKUP_FILE
-    print_success "Database backup created: $BACKUP_FILE"
+    docker compose -f $DOCKER_COMPOSE_FILE exec -T postgres pg_dump -U postgres corpus_te > $BACKUP_FILE 2>/dev/null || true
+    if [ -f "$BACKUP_FILE" ] && [ -s "$BACKUP_FILE" ]; then
+        print_success "Database backup created: $BACKUP_FILE"
+    else
+        print_step "No existing database to backup or backup failed"
+        rm -f "$BACKUP_FILE" 2>/dev/null || true
+    fi
 fi
 
-# Pull latest images and start services
+# Start services (don't pull, use local images)
 print_step "Starting services..."
-docker compose -f $DOCKER_COMPOSE_FILE up -d
+docker compose -f $DOCKER_COMPOSE_FILE up -d --no-deps
 
 # Wait for services to be healthy
 print_step "Waiting for services to be ready..."
