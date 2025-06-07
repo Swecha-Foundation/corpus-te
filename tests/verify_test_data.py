@@ -5,7 +5,7 @@ Verification script to check test data creation
 
 import os
 import sys
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 # Add the project root to Python path

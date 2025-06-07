@@ -1,6 +1,6 @@
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, Query
-from sqlmodel import Session, select
+from sqlmodel import select
 from uuid import UUID
 import uuid
 import logging
@@ -10,7 +10,7 @@ from app.models.record import Record, MediaType
 from app.core.rbac_fastapi import require_any_role, require_admin, create_rbac_dependency
 from app.models.user import User
 from app.schemas import RecordCreate, RecordUpdate, RecordRead
-from app.schemas.geo_schemas import LocationSearch, BoundingBox, Coordinates
+from app.schemas.geo_schemas import Coordinates
 from app.utils.postgis_utils import (
     create_point_for_record,
     extract_coordinates_from_geometry,

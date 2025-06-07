@@ -6,7 +6,6 @@ from datetime import date, datetime
 from uuid import UUID
 
 if TYPE_CHECKING:
-    from .role import Role
     from .record import Record
 
 class User(SQLModel, table=True):

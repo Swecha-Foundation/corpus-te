@@ -48,7 +48,7 @@ async def example_basic_usage():
             }
         )
         
-        print(f"✅ File uploaded successfully!")
+        print("✅ File uploaded successfully!")
         print(f"   Object Key: {result['object_key']}")
         print(f"   Public URL: {result['object_url']}")
         print(f"   File Size: {result['file_size']} bytes")
@@ -62,7 +62,7 @@ async def example_basic_usage():
 
 async def example_file_management(object_key: str):
     """Example: File management operations."""
-    print(f"\n🔧 Example 2: File Management")
+    print("\n🔧 Example 2: File Management")
     print("-" * 40)
     
     try:
@@ -76,7 +76,7 @@ async def example_file_management(object_key: str):
         if exists:
             # Get file information
             info = client.get_object_info(object_key)
-            print(f"📊 File info:")
+            print("📊 File info:")
             print(f"   Size: {info['size']} bytes")
             print(f"   Content Type: {info['content_type']}")
             print(f"   Last Modified: {info['last_modified']}")
@@ -85,7 +85,7 @@ async def example_file_management(object_key: str):
             public_url = get_file_url(object_key)
             presigned_url = get_file_url(object_key, presigned=True, expires_hours=1)
             
-            print(f"🔗 URLs:")
+            print("🔗 URLs:")
             print(f"   Public: {public_url}")
             print(f"   Presigned (1h): {presigned_url[:50]}...")
         
@@ -95,7 +95,7 @@ async def example_file_management(object_key: str):
 
 async def example_media_organization():
     """Example: Organizing files by media type."""
-    print(f"\n📱 Example 3: Media Type Organization")
+    print("\n📱 Example 3: Media Type Organization")
     print("-" * 40)
     
     # Sample files for different media types
@@ -152,7 +152,7 @@ async def example_media_organization():
 
 async def example_bulk_operations():
     """Example: Bulk file operations."""
-    print(f"\n📦 Example 4: Bulk Operations")
+    print("\n📦 Example 4: Bulk Operations")
     print("-" * 40)
     
     try:
@@ -178,7 +178,7 @@ async def example_bulk_operations():
 
 async def cleanup_examples(object_keys: list):
     """Clean up example files."""
-    print(f"\n🧹 Cleanup: Removing Example Files")
+    print("\n🧹 Cleanup: Removing Example Files")
     print("-" * 40)
     
     for key in object_keys:
@@ -225,7 +225,7 @@ async def main():
         for key in all_keys:
             print(f"   - {key}")
     
-    print(f"\n✨ Examples completed!")
+    print("\n✨ Examples completed!")
 
 
 if __name__ == "__main__":

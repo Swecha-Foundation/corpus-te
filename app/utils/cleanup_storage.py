@@ -10,7 +10,6 @@ Usage:
 """
 
 import sys
-import os
 from pathlib import Path
 
 # Add the app directory to Python path
@@ -101,13 +100,13 @@ def delete_all_objects(force=False):
                 failed_count += 1
                 print(f"❌ {i:3d}/{len(objects)} Error deleting {obj['object_key']}: {e}")
         
-        print(f"\n📊 Deletion Summary:")
+        print("\n📊 Deletion Summary:")
         print(f"   ✅ Successfully deleted: {deleted_count}")
         print(f"   ❌ Failed to delete: {failed_count}")
         print(f"   📦 Total processed: {len(objects)}")
         
         if deleted_count > 0:
-            print(f"\n🎉 Storage cleanup completed!")
+            print("\n🎉 Storage cleanup completed!")
         
     except Exception as e:
         print(f"❌ Error during deletion: {e}")

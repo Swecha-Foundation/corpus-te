@@ -36,7 +36,7 @@ async def generate_file_for_specific_record(record_uid_str: str, file_size_kb: i
         
         if result.get("success"):
             upload_info = result.get("upload_result", {})
-            print(f"✅ File generated successfully!")
+            print("✅ File generated successfully!")
             print(f"   Record UID: {record_uid}")
             print(f"   Filename: {upload_info.get('original_filename', 'N/A')}")
             print(f"   Object Key: {upload_info.get('object_key', 'N/A')}")
@@ -100,7 +100,7 @@ async def auto_generate_files(limit: int = 20, file_size_kb: int = 15):
     print(f"   Failed: {result.get('failed', 0)}")
     
     if result.get('results'):
-        print(f"\n📋 Details:")
+        print("\n📋 Details:")
         for res in result['results'][:10]:  # Show first 10 results
             if res.get('success'):
                 upload_info = res.get('upload_result', {})

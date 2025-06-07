@@ -5,10 +5,7 @@ This utility generates sample files and uploads them to Hetzner storage using th
 """
 
 import asyncio
-import os
 import sys
-import tempfile
-import uuid
 from io import BytesIO
 from pathlib import Path
 from typing import Dict, Any, Optional, List
@@ -18,14 +15,12 @@ import logging
 # Add the app directory to the Python path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from fastapi import UploadFile
-from sqlmodel import Session, select, or_
+from sqlmodel import Session, select
 from uuid import UUID
 
 from app.models.record import Record, MediaType
 from app.db.session import engine
-from app.utils.hetzner_storage import upload_file_to_hetzner, get_storage_client
-from app.core.config import settings
+from app.utils.hetzner_storage import get_storage_client
 
 logger = logging.getLogger(__name__)
 
@@ -457,13 +452,13 @@ if __name__ == "__main__":
         print("🔍 Looking for records without files...")
         result = await auto_generate_files_for_pending_records(limit=10, file_size_kb=20)
         
-        print(f"\n📊 Summary:")
+        print("\n📊 Summary:")
         print(f"   Message: {result['message']}")
         print(f"   Successful: {result.get('successful', 0)}")
         print(f"   Failed: {result.get('failed', 0)}")
         
         if result.get('results'):
-            print(f"\n📋 Details:")
+            print("\n📋 Details:")
             for res in result['results'][:5]:  # Show first 5 results
                 if res.get('success'):
                     upload_info = res.get('upload_result', {})
@@ -471,6 +466,6 @@ if __name__ == "__main__":
                 else:
                     print(f"   ❌ {res['record_uid'][:8]}... -> {res.get('error', 'Unknown error')}")
         
-        print(f"\n✨ File generation completed!")
+        print("\n✨ File generation completed!")
     
     asyncio.run(main())

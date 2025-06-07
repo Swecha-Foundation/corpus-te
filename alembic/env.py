@@ -28,8 +28,6 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 from sqlmodel import SQLModel
-from app.models import Role, User, Category, Record, UserRoleLink  # Import all models
-from app.models.otp import OTP  # Import OTP model
 
 target_metadata = SQLModel.metadata
 

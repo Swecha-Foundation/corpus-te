@@ -51,7 +51,7 @@ async def example_single_record_file():
             
             if result.get("success"):
                 upload_info = result["upload_result"]
-                print(f"\n✅ File generated successfully!")
+                print("\n✅ File generated successfully!")
                 print(f"   Generated filename: {upload_info['original_filename']}")
                 print(f"   Storage object key: {upload_info['object_key']}")
                 print(f"   File size: {upload_info['file_size']} bytes")
@@ -127,7 +127,7 @@ async def example_bulk_processing():
         successful = 0
         failed = 0
         
-        print(f"\n📊 Results:")
+        print("\n📊 Results:")
         for result in results:
             if result.get("success"):
                 successful += 1
@@ -159,7 +159,7 @@ async def example_auto_generation():
         print(f"   Failed: {result.get('failed', 0)}")
         
         if result.get('results'):
-            print(f"\n📋 Sample results:")
+            print("\n📋 Sample results:")
             for res in result['results'][:3]:  # Show first 3
                 if res.get('success'):
                     upload_info = res["upload_result"]

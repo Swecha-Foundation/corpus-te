@@ -1,10 +1,10 @@
 # app/models/role.py
-from sqlmodel import SQLModel, Field, Relationship
-from typing import Optional, List, TYPE_CHECKING
+from sqlmodel import SQLModel, Field
+from typing import Optional, TYPE_CHECKING
 import enum
 
 if TYPE_CHECKING:
-    from .user import User
+    pass
 
 class RoleEnum(str, enum.Enum):
     admin = "admin"

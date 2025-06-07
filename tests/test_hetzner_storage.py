@@ -4,10 +4,8 @@ Test script for Hetzner Object Storage utility.
 This script tests the basic functionality of the storage client.
 """
 
-import os
 import sys
 import asyncio
-import tempfile
 from io import BytesIO
 from pathlib import Path
 

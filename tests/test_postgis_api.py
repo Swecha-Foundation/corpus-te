@@ -6,7 +6,6 @@ This script tests the Record API endpoints with PostGIS coordinate handling.
 
 import requests
 import json
-from typing import Dict, Any
 
 # Test configuration
 BASE_URL = "http://localhost:8000"

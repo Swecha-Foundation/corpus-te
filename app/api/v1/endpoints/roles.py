@@ -4,11 +4,11 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from sqlmodel import select
 
 from app.db.session import SessionDep
-from app.models.role import Role, RoleEnum
+from app.models.role import Role
 from app.models.user import User
 from app.schemas import RoleRead, RoleCreate, MessageResponse
 from app.core.exceptions import DuplicateEntry
-from app.core.rbac_fastapi import require_any_role,require_admin, create_rbac_dependency
+from app.core.rbac_fastapi import require_admin
 router = APIRouter()
 
 @router.get("/", response_model=List[RoleRead])

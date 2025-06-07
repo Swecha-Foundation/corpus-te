@@ -3,7 +3,6 @@ Geographic coordinate schemas for PostGIS integration
 """
 
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
-from typing import Optional
 
 
 class Coordinates(BaseModel):

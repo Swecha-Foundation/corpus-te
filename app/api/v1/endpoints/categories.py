@@ -1,6 +1,6 @@
 from typing import List
 from fastapi import APIRouter, HTTPException, Depends
-from sqlmodel import Session, select
+from sqlmodel import select
 
 from app.db.session import SessionDep
 from app.models.category import Category

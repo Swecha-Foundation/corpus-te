@@ -8,10 +8,8 @@ This script tests:
 4. Spatial queries (distance, bounding box)
 """
 
-import asyncio
-from sqlmodel import Session, select, text
+from sqlmodel import Session, text
 from app.db.session import engine
-from app.models.record import Record
 from app.utils.postgis_utils import (
     create_point_wkt,
     create_point_for_record,
@@ -80,7 +78,7 @@ def test_database_point_operations():
             
             if result:
                 geom, lng, lat = result
-                print(f"✅ Geometry storage test passed")
+                print("✅ Geometry storage test passed")
                 print(f"   Stored coordinates: lat={lat}, lng={lng}")
                 
                 # Test coordinate extraction

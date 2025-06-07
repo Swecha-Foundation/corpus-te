@@ -5,7 +5,6 @@ import requests
 import json
 import tempfile
 import os
-from pathlib import Path
 
 API_BASE = "http://localhost:8000/api/v1"
 
@@ -101,7 +100,7 @@ def test_upload_endpoint_with_uid_filename():
         
         if response.status_code == 201:  # Fixed: 201 is success for upload
             record = response.json()
-            print(f"✅ Upload successful!")
+            print("✅ Upload successful!")
             print(f"Record UID: {record['uid']}")
             print(f"File URL: {record['file_url']}")
             print(f"Status: {record['status']}")
@@ -158,7 +157,7 @@ def test_create_endpoint_with_file_generation():
     
     if response.status_code == 201:
         record = response.json()
-        print(f"✅ Create with file generation successful!")
+        print("✅ Create with file generation successful!")
         print(f"Record UID: {record['uid']}")
         print(f"File URL: {record.get('file_url', 'None')}")
         print(f"File Name: {record.get('file_name', 'None')}")
@@ -215,7 +214,7 @@ def test_regular_upload_endpoint():
         
         if response.status_code == 201:  # Fixed: 201 is success for upload
             record = response.json()
-            print(f"✅ Regular upload successful!")
+            print("✅ Regular upload successful!")
             print(f"Record UID: {record['uid']}")
             print(f"File URL: {record['file_url']}")
             print(f"Status: {record['status']}")
@@ -266,7 +265,7 @@ def test_regular_create_endpoint():
     
     if response.status_code == 201:
         record = response.json()
-        print(f"✅ Regular create successful!")
+        print("✅ Regular create successful!")
         print(f"Record UID: {record['uid']}")
         print(f"File URL: {record.get('file_url', 'None')}")
         print(f"Status: {record['status']}")

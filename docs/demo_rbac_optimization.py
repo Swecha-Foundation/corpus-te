@@ -6,7 +6,6 @@ Final demonstration of the optimized RBAC system
 import asyncio
 import httpx
 import time
-from typing import List
 
 BASE_URL = "http://localhost:8000"
 

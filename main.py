@@ -5,7 +5,6 @@ Run with: python main.py or uvicorn main:app
 """
 
 import uvicorn
-from app.main import app
 from app.core.config import settings
 
 if __name__ == "__main__":

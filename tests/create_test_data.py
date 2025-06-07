@@ -6,7 +6,6 @@ Create test data: 3 users (admin, reviewer, user roles), 2 categories, and 4 rec
 import sys
 import os
 from datetime import datetime, date, timezone
-from uuid import UUID
 
 # Add the app directory to the Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))

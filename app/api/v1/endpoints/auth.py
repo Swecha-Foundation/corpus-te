@@ -1,7 +1,5 @@
 # app/api/v1/endpoints/auth.py
 from datetime import timedelta
-from typing import Annotated
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer

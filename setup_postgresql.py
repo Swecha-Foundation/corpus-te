@@ -18,7 +18,6 @@ import os
 import sys
 import argparse
 from sqlalchemy import create_engine, text
-from sqlalchemy.exc import OperationalError, ProgrammingError
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
@@ -39,7 +38,7 @@ def test_postgres_connection():
             version_row = result.fetchone()
             if version_row and len(version_row) > 0:
                 version = version_row[0]
-                print(f"✅ PostgreSQL server connection successful!")
+                print("✅ PostgreSQL server connection successful!")
                 print(f"   Version: {version}")
                 return True
             else:
@@ -161,7 +160,7 @@ def enable_postgis():
             version_row = result.fetchone()
             if version_row and len(version_row) > 0:
                 version = version_row[0]
-                print(f"✅ PostGIS extension enabled successfully!")
+                print("✅ PostGIS extension enabled successfully!")
                 print(f"   PostGIS Version: {version}")
                 return True
             else:

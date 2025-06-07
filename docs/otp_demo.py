@@ -5,7 +5,6 @@ This script demonstrates how to use the OTP authentication API
 """
 
 import requests
-import json
 import time
 
 # Configuration
@@ -28,7 +27,7 @@ def demo_otp_flow():
         
         if response.status_code == 200:
             result = response.json()
-            print(f"✅ OTP sent successfully!")
+            print("✅ OTP sent successfully!")
             print(f"   Message: {result['message']}")
             print(f"   Reference ID: {result['reference_id']}")
         else:
@@ -41,7 +40,7 @@ def demo_otp_flow():
         return
     
     # Step 2: Get OTP from user
-    print(f"\n📥 Check your phone for the OTP message")
+    print("\n📥 Check your phone for the OTP message")
     otp_code = input("Enter the OTP code: ").strip()
     
     if not otp_code:
@@ -49,7 +48,7 @@ def demo_otp_flow():
         return
     
     # Step 3: Verify OTP
-    print(f"\n🔐 Verifying OTP...")
+    print("\n🔐 Verifying OTP...")
     
     verify_data = {
         "phone_number": TEST_PHONE,
@@ -61,7 +60,7 @@ def demo_otp_flow():
         
         if response.status_code == 200:
             result = response.json()
-            print(f"✅ OTP verified successfully!")
+            print("✅ OTP verified successfully!")
             print(f"   Token Type: {result['token_type']}")
             print(f"   User ID: {result['user_id']}")
             print(f"   Phone: {result['phone_number']}")
@@ -78,7 +77,7 @@ def demo_otp_flow():
         return
     
     # Step 4: Test authenticated endpoint
-    print(f"\n👤 Testing authenticated endpoint...")
+    print("\n👤 Testing authenticated endpoint...")
     
     headers = {"Authorization": f"Bearer {access_token}"}
     
@@ -87,7 +86,7 @@ def demo_otp_flow():
         
         if response.status_code == 200:
             user_info = response.json()
-            print(f"✅ Successfully accessed user info!")
+            print("✅ Successfully accessed user info!")
             print(f"   User ID: {user_info['id']}")
             print(f"   Phone: {user_info['phone']}")
             print(f"   Name: {user_info.get('name', 'Not set')}")
@@ -101,7 +100,7 @@ def demo_otp_flow():
     except Exception as e:
         print(f"❌ Error: {e}")
     
-    print(f"\n🎉 Demo completed!")
+    print("\n🎉 Demo completed!")
     print("=" * 50)
 
 def test_rate_limiting():
@@ -120,9 +119,9 @@ def test_rate_limiting():
             response = requests.post(f"{API_BASE}/send-otp", json=send_data)
             
             if response.status_code == 200:
-                print(f"   ✅ OTP sent")
+                print("   ✅ OTP sent")
             elif response.status_code == 429:
-                print(f"   ⚠️  Rate limited (expected)")
+                print("   ⚠️  Rate limited (expected)")
                 break
             else:
                 print(f"   ❌ Error: {response.status_code}")

@@ -14,7 +14,6 @@ def create_db_and_tables():
     """Create database tables if they don't exist"""
     from sqlmodel import SQLModel
     # Import all models to ensure they're registered
-    from app.models import Role, User, Category, Record
     SQLModel.metadata.create_all(engine)
 
 def get_session():

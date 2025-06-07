@@ -2,11 +2,9 @@
 PostGIS Geometry Utilities for handling spatial data
 """
 
-from typing import Optional, Tuple
-from geoalchemy2 import Geometry
-from geoalchemy2.functions import ST_GeomFromText, ST_X, ST_Y, ST_AsText
+from typing import Optional
+from geoalchemy2.functions import ST_GeomFromText, ST_X, ST_Y
 from sqlalchemy import func
-from sqlalchemy.sql import text
 
 
 def create_point_wkt(latitude: float, longitude: float) -> str:

@@ -4,7 +4,6 @@ Test script for OTP Authentication API
 """
 
 import requests
-import json
 import sys
 from time import sleep
 
@@ -24,7 +23,7 @@ def test_send_otp():
         
         if response.status_code == 200:
             result = response.json()
-            print(f"✅ OTP sent successfully!")
+            print("✅ OTP sent successfully!")
             print(f"   Status: {result.get('status')}")
             print(f"   Message: {result.get('message')}")
             print(f"   Reference ID: {result.get('reference_id')}")
@@ -52,7 +51,7 @@ def test_verify_otp(otp_code):
         
         if response.status_code == 200:
             result = response.json()
-            print(f"✅ OTP verified successfully!")
+            print("✅ OTP verified successfully!")
             print(f"   Access Token: {result.get('access_token')[:50]}...")
             print(f"   Token Type: {result.get('token_type')}")
             print(f"   User ID: {result.get('user_id')}")
@@ -79,7 +78,7 @@ def test_resend_otp():
         
         if response.status_code == 200:
             result = response.json()
-            print(f"✅ OTP resent successfully!")
+            print("✅ OTP resent successfully!")
             print(f"   Status: {result.get('status')}")
             print(f"   Message: {result.get('message')}")
             print(f"   Reference ID: {result.get('reference_id')}")
@@ -95,7 +94,7 @@ def test_resend_otp():
 
 def test_authenticated_endpoint(access_token):
     """Test accessing an authenticated endpoint"""
-    print(f"\n🔄 Testing authenticated endpoint...")
+    print("\n🔄 Testing authenticated endpoint...")
     
     headers = {
         "Authorization": f"Bearer {access_token}"
@@ -106,7 +105,7 @@ def test_authenticated_endpoint(access_token):
         
         if response.status_code == 200:
             result = response.json()
-            print(f"✅ Successfully accessed authenticated endpoint!")
+            print("✅ Successfully accessed authenticated endpoint!")
             print(f"   User ID: {result.get('id')}")
             print(f"   Phone: {result.get('phone')}")
             print(f"   Name: {result.get('name')}")
@@ -132,7 +131,7 @@ def main():
         sys.exit(1)
     
     # Ask user for OTP code
-    print(f"\n📱 Please check your phone for the OTP code.")
+    print("\n📱 Please check your phone for the OTP code.")
     otp_code = input("Enter the OTP code you received: ").strip()
     
     if not otp_code:

@@ -5,12 +5,10 @@ import requests
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any
 from sqlmodel import Session, select, desc
-from fastapi import HTTPException
 import logging
 
 from app.core.config import settings
 from app.models.otp import OTP
-from app.db.session import engine
 
 logger = logging.getLogger(__name__)
 
