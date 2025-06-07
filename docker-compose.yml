@@ -19,9 +19,9 @@ services:
   postgres:
     image: postgres:15
     environment:
-      POSTGRES_DB: corpus_te
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ${POSTGRES_DB:-corpus_te}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
     ports:
       - "5432:5432"
     volumes:
@@ -40,7 +40,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/corpus_te
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-corpus_te}
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - LOG_LEVEL=INFO
@@ -65,7 +65,7 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/corpus_te
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-corpus_te}
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - LOG_LEVEL=INFO
@@ -90,7 +90,7 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/corpus_te
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-corpus_te}
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - LOG_LEVEL=INFO
@@ -110,7 +110,7 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/corpus_te
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-corpus_te}
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - LOG_LEVEL=INFO
