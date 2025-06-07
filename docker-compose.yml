@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Redis for Celery broker and result backend
   redis:
@@ -32,6 +30,23 @@ services:
       timeout: 5s
       retries: 5
 
+  # Database initialization service
+  db-init:
+    build:
+      context: .
+      dockerfile: Dockerfile.init
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-corpus_te}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${POSTGRES_DB:-corpus_te}
+      - DB_USER=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-password}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"  # Run once and exit
+
   # Main FastAPI application
   app:
     build:
@@ -49,6 +64,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     volumes:
       - ./app:/app/app:ro  # Mount app code for development
       - /tmp:/tmp  # Temporary file storage
@@ -74,6 +91,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     volumes:
       - ./app:/app/app:ro  # Mount app code for development
       - /tmp:/tmp  # Temporary file storage
@@ -99,6 +118,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     volumes:
       - ./app:/app/app:ro
       - /tmp:/tmp
@@ -119,6 +140,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     volumes:
       - ./app:/app/app:ro
       - celery_beat_data:/app/celerybeat-schedule
