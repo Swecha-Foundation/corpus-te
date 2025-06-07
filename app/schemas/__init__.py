@@ -62,6 +62,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str = Field(..., min_length=6, max_length=100)
     role_ids: List[int] = Field(default=[2])  # Default to user role (id=2)
+    has_given_consent: bool = Field(..., description="User must give consent to proceed")
 
 class UserUpdate(BaseModel):
     name: Optional[str] = None
@@ -70,10 +71,13 @@ class UserUpdate(BaseModel):
     date_of_birth: Optional[date] = None
     place: Optional[str] = None
     is_active: Optional[bool] = None
+    has_given_consent: Optional[bool] = None
 
 class UserRead(UserBase):
     id: UUID
     is_active: bool
+    has_given_consent: bool
+    consent_given_at: Optional[datetime] = None
     last_login_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime

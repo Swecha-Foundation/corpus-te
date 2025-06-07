@@ -34,6 +34,7 @@ class OTPResponse(BaseModel):
 class OTPVerifyRequest(BaseModel):
     phone_number: str = Field(..., description="Phone number with country code")
     otp_code: str = Field(..., min_length=4, max_length=8, description="OTP code")
+    has_given_consent: bool = Field(True, description="User consent for data processing (defaults to True for OTP flow)")
     
     @field_validator('phone_number')
     @classmethod

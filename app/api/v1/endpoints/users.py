@@ -83,6 +83,13 @@ async def create_user(
     # current_user: User = Depends(require_users_write())
 ):
     """Create a new user."""
+    # Validate consent requirement
+    if not user_data.has_given_consent:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User consent is required to create an account"
+        )
+    
     # Check if roles exist
     for role_id in user_data.role_ids:
         role = session.get(Role, role_id)
@@ -113,6 +120,11 @@ async def create_user(
     
     # Hash the password
     user.hashed_password = get_password_hash(user_data.password)
+    
+    # Set consent timestamp if consent is given
+    if user_data.has_given_consent:
+        from datetime import datetime
+        user.consent_given_at = datetime.utcnow()
     
     session.add(user)
     session.flush()  # Get the user ID before committing

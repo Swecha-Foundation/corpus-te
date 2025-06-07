@@ -212,12 +212,30 @@ async def verify_otp(
         
         if not user:
             # Create new user with phone number
+            from datetime import datetime
             user = User(
                 phone=request.phone_number,
                 name="",  # Will be updated later
-                is_active=True
+                is_active=True,
+                has_given_consent=request.has_given_consent,  # Use consent from request
+                consent_given_at=datetime.utcnow() if request.has_given_consent else None
             )
             session.add(user)
+            session.flush()  # Get user ID
+            
+            # Auto-assign "user" role (id=2) to new users
+            from app.models.role import Role
+            from app.models.associations import UserRoleLink
+            
+            # Get the "user" role
+            user_role_statement = select(Role).where(Role.name == "user")
+            user_role = session.exec(user_role_statement).first()
+            
+            if user_role:
+                # Create role assignment
+                user_role_link = UserRoleLink(user_id=user.id, role_id=user_role.id)
+                session.add(user_role_link)
+            
             session.commit()
             session.refresh(user)
         

@@ -21,6 +21,10 @@ class User(SQLModel, table=True):
     hashed_password: Optional[str] = Field(default=None, max_length=255)
     is_active: bool = Field(default=True)
     last_login_at: Optional[datetime] = Field(default=None)
+    
+    # Consent tracking
+    has_given_consent: bool = Field(default=False)
+    consent_given_at: Optional[datetime] = Field(default=None)
 
     created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
