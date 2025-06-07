@@ -17,7 +17,7 @@ services:
 
   # PostgreSQL database
   postgres:
-    image: postgres:15
+    image: postgis/postgis:15-3.3
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-corpus_te}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
