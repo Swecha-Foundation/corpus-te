@@ -46,7 +46,12 @@ def get_records(
     # Convert records to read schema with location coordinates
     result = []
     for record in records:
-        record_data = RecordRead.model_validate(record)
+        # Convert to read schema (manually handle location field to avoid WKBElement validation error)
+        record_dict = record.model_dump()
+        # Remove the location field that contains WKBElement
+        record_dict.pop('location', None)
+        
+        record_data = RecordRead.model_validate(record_dict)
         if record.location:
             coords = extract_coordinates_from_geometry(record.location)
             if coords:
@@ -72,8 +77,12 @@ def get_record(
     if not record:
         raise HTTPException(status_code=404, detail="Record not found")
     
-    # Convert to read schema with coordinates
-    result = RecordRead.model_validate(record)
+    # Convert to read schema with coordinates (manually handle location field to avoid WKBElement validation error)
+    record_dict = record.model_dump()
+    # Remove the location field that contains WKBElement
+    record_dict.pop('location', None)
+    
+    result = RecordRead.model_validate(record_dict)
     if record.location:
         coords = extract_coordinates_from_geometry(record.location)
         if coords:
@@ -174,8 +183,12 @@ async def create_record(
     session.commit()
     session.refresh(record)
     
-    # Convert to read schema with coordinates
-    result = RecordRead.model_validate(record, from_attributes=True)
+    # Convert to read schema with coordinates (manually handle location field to avoid WKBElement validation error)
+    record_dict = record.model_dump()
+    # Remove the location field that contains WKBElement
+    record_dict.pop('location', None)
+    
+    result = RecordRead.model_validate(record_dict)
     if record.location:
         coords = extract_coordinates_from_geometry(record.location)
         if coords:
@@ -309,8 +322,12 @@ async def upload_record(
     session.commit()
     session.refresh(record_data)
     
-    # Convert to read schema with coordinates
-    result = RecordRead.model_validate(record_data)
+    # Convert to read schema with coordinates (manually handle location field to avoid WKBElement validation error)
+    record_dict = record_data.model_dump()
+    # Remove the location field that contains WKBElement
+    record_dict.pop('location', None)
+    
+    result = RecordRead.model_validate(record_dict)
     if record_data.location:
         coords = extract_coordinates_from_geometry(record_data.location)
         if coords:
@@ -356,8 +373,12 @@ def update_record(
     session.commit()
     session.refresh(record)
     
-    # Convert to read schema with coordinates
-    result = RecordRead.model_validate(record)
+    # Convert to read schema with coordinates (manually handle location field to avoid WKBElement validation error)
+    record_dict = record.model_dump()
+    # Remove the location field that contains WKBElement
+    record_dict.pop('location', None)
+    
+    result = RecordRead.model_validate(record_dict)
     if record.location:
         coords = extract_coordinates_from_geometry(record.location)
         if coords:
@@ -446,7 +467,12 @@ def search_records_nearby(
     # Convert to read schema with coordinates
     result = []
     for record in records:
-        record_data = RecordRead.model_validate(record)
+        # Convert to read schema (manually handle location field to avoid WKBElement validation error)
+        record_dict = record.model_dump()
+        # Remove the location field that contains WKBElement
+        record_dict.pop('location', None)
+        
+        record_data = RecordRead.model_validate(record_dict)
         if record.location:
             coords = extract_coordinates_from_geometry(record.location)
             if coords:
@@ -504,7 +530,12 @@ def search_records_in_bbox(
     # Convert to read schema with coordinates
     result = []
     for record in records:
-        record_data = RecordRead.model_validate(record)
+        # Convert to read schema (manually handle location field to avoid WKBElement validation error)
+        record_dict = record.model_dump()
+        # Remove the location field that contains WKBElement
+        record_dict.pop('location', None)
+        
+        record_data = RecordRead.model_validate(record_dict)
         if record.location:
             coords = extract_coordinates_from_geometry(record.location)
             if coords:
@@ -555,7 +586,12 @@ def get_records_with_distances(
     # Convert to response format
     response = []
     for record, distance in results:
-        record_data = RecordRead.model_validate(record)
+        # Convert to read schema (manually handle location field to avoid WKBElement validation error)
+        record_dict = record.model_dump()
+        # Remove the location field that contains WKBElement
+        record_dict.pop('location', None)
+        
+        record_data = RecordRead.model_validate(record_dict)
         if record.location:
             coords = extract_coordinates_from_geometry(record.location)
             if coords:
