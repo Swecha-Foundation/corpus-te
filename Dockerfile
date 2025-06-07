@@ -38,6 +38,9 @@ COPY --from=builder /usr/local/bin/ /usr/local/bin/
 # This includes your main.py, app/ directory, alembic/ directory, alembic.ini, etc.
 COPY . .
 
+# Make celery scripts executable
+RUN chmod +x celery_worker.py celery_beat.py
+
 # Change ownership of the app directory to the non-root user
 RUN chown -R appuser:appuser /app
 
@@ -47,6 +50,6 @@ USER appuser
 # Expose the port the app runs on (Gunicorn will bind to this port)
 EXPOSE 8000
 
-# Command to run the application with Gunicorn
+# Default command to run the application with Gunicorn
 # The number of workers (-w) can be adjusted based on your VM's CPU cores (e.g., 2 * num_cores + 1)
 CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "app.main:app", "-w", "4", "-b", "0.0.0.0:8000"]
