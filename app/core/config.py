@@ -50,5 +50,18 @@ class Settings:
     ALLOWED_AUDIO_EXTENSIONS: set[str] = {".mp3", ".wav", ".m4a", ".ogg"}
     ALLOWED_VIDEO_EXTENSIONS: set[str] = {".mp4", ".avi", ".mov", ".mkv"}
     ALLOWED_IMAGE_EXTENSIONS: set[str] = {".jpg", ".jpeg", ".png", ".gif"}
+    
+    # OTP Service settings
+    OTP_USER_NAME: str = os.getenv("OTP_USER_NAME", "")
+    OTP_ENTITY_ID: str = os.getenv("OTP_ENTITY_ID", "")
+    OTP_TEMPLATE_ID: str = os.getenv("OTP_TEMPLATE_ID", "")
+    OTP_SMS_TEXT: str = os.getenv("OTP_SMS_TEXT", "Your OTP is {otp}. Valid for 5 minutes.")
+    OTP_API_KEY: str = os.getenv("OTP_API_KEY", "")
+    OTP_SMS_TYPE: str = os.getenv("OTP_SMS_TYPE", "0")
+    OTP_SENDER_ID: str = os.getenv("OTP_SENDER_ID", "")
+    OTP_SERVICE_URL: str = os.getenv("OTP_SERVICE_URL", "")
+    OTP_EXPIRY_MINUTES: int = int(os.getenv("OTP_EXPIRY_MINUTES", "5"))
+    OTP_MAX_ATTEMPTS: int = int(os.getenv("OTP_MAX_ATTEMPTS", "3"))
+    OTP_RATE_LIMIT_MINUTES: int = int(os.getenv("OTP_RATE_LIMIT_MINUTES", "1"))
 
 settings = Settings()

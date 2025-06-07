@@ -25,6 +25,11 @@ from app.schemas import (
     PasswordResetRequest,
     MessageResponse,
 )
+from app.schemas.otp import OTPSendRequest, OTPVerifyRequest, OTPResponse, TokenResponse
+from app.services.otp_service import OTPService
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 security = HTTPBearer()
@@ -142,3 +147,150 @@ async def refresh_token(
         "access_token": access_token,
         "token_type": "bearer"
     }
+
+
+@router.post("/send-otp", response_model=OTPResponse)
+async def send_otp(
+    request: OTPSendRequest,
+    session: SessionDep
+):
+    """Send OTP to phone number via SMS"""
+    try:
+        otp_service = OTPService(session)
+        
+        # Check rate limiting
+        if not await otp_service.check_rate_limit(request.phone_number):
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Rate limit exceeded. Please try again later."
+            )
+        
+        # Send OTP
+        result = await otp_service.send_otp(request.phone_number)
+        
+        if result["status"] == "success":
+            return OTPResponse(
+                status="success",
+                message="OTP sent successfully",
+                reference_id=result.get("reference_id")
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to send OTP: {result.get('message', 'Unknown error')}"
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error sending OTP: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
+
+
+@router.post("/verify-otp", response_model=TokenResponse)
+async def verify_otp(
+    request: OTPVerifyRequest,
+    session: SessionDep
+):
+    """Verify OTP and generate JWT token"""
+    try:
+        otp_service = OTPService(session)
+        
+        # Verify OTP
+        is_valid = await otp_service.verify_otp(request.phone_number, request.otp_code)
+        
+        if not is_valid:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired OTP"
+            )
+        
+        # Check if user exists, create if not
+        statement = select(User).where(User.phone == request.phone_number)
+        user = session.exec(statement).first()
+        
+        if not user:
+            # Create new user with phone number
+            user = User(
+                phone=request.phone_number,
+                name="",  # Will be updated later
+                is_active=True
+            )
+            session.add(user)
+            session.commit()
+            session.refresh(user)
+        
+        # Update last login time
+        from datetime import datetime
+        user.last_login_at = datetime.utcnow()
+        session.add(user)
+        session.commit()
+        
+        # Generate JWT token
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            subject=str(user.id), expires_delta=access_token_expires
+        )
+        
+        return TokenResponse(
+            access_token=access_token,
+            token_type="bearer",
+            user_id=str(user.id),
+            phone_number=user.phone
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error verifying OTP: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
+
+
+@router.post("/resend-otp", response_model=OTPResponse)
+async def resend_otp(
+    request: OTPSendRequest,
+    session: SessionDep
+):
+    """Resend OTP to phone number"""
+    try:
+        otp_service = OTPService(session)
+        
+        # Check rate limiting for resend
+        if not await otp_service.check_rate_limit(request.phone_number):
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Rate limit exceeded. Please try again later."
+            )
+        
+        # Invalidate existing OTP
+        await otp_service.invalidate_otp(request.phone_number)
+        
+        # Send new OTP
+        result = await otp_service.send_otp(request.phone_number)
+        
+        if result["status"] == "success":
+            return OTPResponse(
+                status="success",
+                message="OTP resent successfully",
+                reference_id=result.get("reference_id")
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to resend OTP: {result.get('message', 'Unknown error')}"
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error resending OTP: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )

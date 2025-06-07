@@ -2,7 +2,7 @@
 Geographic coordinate schemas for PostGIS integration
 """
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from typing import Optional
 
 
@@ -11,14 +11,16 @@ class Coordinates(BaseModel):
     latitude: float = Field(..., ge=-90, le=90, description="Latitude in decimal degrees")
     longitude: float = Field(..., ge=-180, le=180, description="Longitude in decimal degrees")
     
-    @validator('latitude')
-    def validate_latitude(cls, v):
+    @field_validator('latitude')
+    @classmethod
+    def validate_latitude(cls, v: float) -> float:
         if not -90 <= v <= 90:
             raise ValueError('Latitude must be between -90 and 90 degrees')
         return v
     
-    @validator('longitude')
-    def validate_longitude(cls, v):
+    @field_validator('longitude')
+    @classmethod
+    def validate_longitude(cls, v: float) -> float:
         if not -180 <= v <= 180:
             raise ValueError('Longitude must be between -180 and 180 degrees')
         return v
@@ -55,16 +57,20 @@ class BoundingBox(BaseModel):
     max_latitude: float = Field(..., ge=-90, le=90)
     max_longitude: float = Field(..., ge=-180, le=180)
     
-    @validator('max_latitude')
-    def validate_max_latitude(cls, v, values):
-        if 'min_latitude' in values and v <= values['min_latitude']:
-            raise ValueError('max_latitude must be greater than min_latitude')
+    @field_validator('max_latitude')
+    @classmethod
+    def validate_max_latitude(cls, v: float, info: ValidationInfo) -> float:
+        if hasattr(info, 'data') and info.data and 'min_latitude' in info.data:
+            if v <= info.data['min_latitude']:
+                raise ValueError('max_latitude must be greater than min_latitude')
         return v
     
-    @validator('max_longitude')
-    def validate_max_longitude(cls, v, values):
-        if 'min_longitude' in values and v <= values['min_longitude']:
-            raise ValueError('max_longitude must be greater than min_longitude')
+    @field_validator('max_longitude')
+    @classmethod
+    def validate_max_longitude(cls, v: float, info: ValidationInfo) -> float:
+        if hasattr(info, 'data') and info.data and 'min_longitude' in info.data:
+            if v <= info.data['min_longitude']:
+                raise ValueError('max_longitude must be greater than min_longitude')
         return v
 
     class Config:
