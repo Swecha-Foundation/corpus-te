@@ -54,9 +54,42 @@ def wait_for_postgres(max_retries=30, delay=2):
     logger.error("❌ PostgreSQL failed to become ready within timeout")
     return False
 
+def is_database_initialized():
+    """Check if the database is already initialized by checking for core tables and data."""
+    try:
+        if not test_database_connection():
+            return False
+        
+        from app.models import Role
+        from app.db.session import engine
+        from sqlmodel import Session, select
+        
+        with Session(engine) as session:
+            # Check if core tables exist and have data
+            # 1. Check if roles table exists and has data
+            try:
+                roles = session.exec(select(Role)).all()
+                if len(roles) >= 3:  # Should have admin, user, reviewer roles
+                    logger.info(f"✅ Database already initialized (found {len(roles)} roles)")
+                    return True
+            except Exception:
+                # Table doesn't exist or other error - not initialized
+                return False
+        
+        return False
+    except Exception as e:
+        logger.warning(f"Could not check initialization status: {e}")
+        return False
+
 def initialize_database():
     """Run complete database initialization."""
     logger.info("🚀 Starting database initialization...")
+    
+    # Step 0: Check if already initialized
+    logger.info("🔍 Checking if database is already initialized...")
+    if is_database_initialized():
+        logger.info("✅ Database is already initialized, skipping initialization steps")
+        return True
     
     # Step 1: Wait for PostgreSQL
     if not wait_for_postgres():

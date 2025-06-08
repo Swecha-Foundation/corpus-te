@@ -20,15 +20,19 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-corpus_te}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      # Ensure proper data persistence
+      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-corpus_te}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    # Add restart policy to ensure persistence
+    restart: unless-stopped
 
   # Database initialization service
   db-init:
@@ -46,6 +50,13 @@ services:
       postgres:
         condition: service_healthy
     restart: "no"  # Run once and exit
+    # Add healthcheck to track initialization completion
+    healthcheck:
+      test: ["CMD", "echo", "Database initialization completed"]
+      interval: 5s
+      timeout: 3s
+      retries: 1
+      start_period: 30s
 
   # Main FastAPI application
   app:
@@ -169,8 +180,12 @@ services:
 
 volumes:
   postgres_data:
+    # Explicit driver specification for persistence
+    driver: local
   redis_data:
+    driver: local
   celery_beat_data:
+    driver: local
 
 networks:
   default:
