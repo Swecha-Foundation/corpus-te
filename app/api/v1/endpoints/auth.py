@@ -154,18 +154,29 @@ async def send_otp(
 ):
     """Send OTP to phone number via SMS"""
     try:
-        otp_service = OTPService(session)
+        # ✅ Check if user exists (based on current model)
+        user = session.exec(select(User).where(User.phone == request.phone_number)).first()
         
-        # Check rate limiting
+        if not user:
+            logger.warning("User does not exist for phone number")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User does not exist"
+            )
+
+        # ✅ Proceed with OTP flow
+        otp_service = OTPService(session)
+
+        # Rate limiting
         if not await otp_service.check_rate_limit(request.phone_number):
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail="Rate limit exceeded. Please try again later."
             )
-        
+
         # Send OTP
         result = await otp_service.send_otp(request.phone_number)
-        
+
         if result["status"] == "success":
             return OTPResponse(
                 status="success",
@@ -177,7 +188,7 @@ async def send_otp(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to send OTP: {result.get('message', 'Unknown error')}"
             )
-            
+
     except HTTPException:
         raise
     except Exception as e:
@@ -186,6 +197,7 @@ async def send_otp(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error"
         )
+
 
 
 @router.post("/verify-otp", response_model=TokenResponse)
@@ -197,7 +209,7 @@ async def verify_otp(
     try:
         otp_service = OTPService(session)
         
-        # Verify OTP
+        # ✅ Just verify OTP
         is_valid = await otp_service.verify_otp(request.phone_number, request.otp_code)
         
         if not is_valid:
@@ -206,38 +218,15 @@ async def verify_otp(
                 detail="Invalid or expired OTP"
             )
         
-        # Check if user exists, create if not
+        # ✅ Directly fetch the user (assume it exists)
         statement = select(User).where(User.phone == request.phone_number)
         user = session.exec(statement).first()
         
         if not user:
-            # Create new user with phone number
-            from datetime import datetime
-            user = User(
-                phone=request.phone_number,
-                name="",  # Will be updated later
-                is_active=True,
-                has_given_consent=request.has_given_consent,  # Use consent from request
-                consent_given_at=datetime.utcnow() if request.has_given_consent else None
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User does not exist"
             )
-            session.add(user)
-            session.flush()  # Get user ID
-            
-            # Auto-assign "user" role (id=2) to new users
-            from app.models.role import Role
-            from app.models.associations import UserRoleLink
-            
-            # Get the "user" role
-            user_role_statement = select(Role).where(Role.name == "user")
-            user_role = session.exec(user_role_statement).first()
-            
-            if user_role:
-                # Create role assignment
-                user_role_link = UserRoleLink(user_id=user.id, role_id=user_role.id)
-                session.add(user_role_link)
-            
-            session.commit()
-            session.refresh(user)
         
         # Update last login time
         from datetime import datetime
