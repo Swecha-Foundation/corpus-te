@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional
+from typing import Optional, List
 import re
 
 class OTPSendRequest(BaseModel):
@@ -42,8 +42,12 @@ class OTPVerifyRequest(BaseModel):
         # Reuse the validation logic from OTPSendRequest
         return OTPSendRequest.validate_phone_number(v)
 
+# Import RoleRead here to avoid circular imports
+from app.schemas import RoleRead
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user_id: str
     phone_number: str
+    roles: List[RoleRead] = []

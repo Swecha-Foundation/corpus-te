@@ -245,6 +245,16 @@ async def verify_otp(
         session.add(user)
         session.commit()
         
+        # Get user's roles through association table
+        from app.models.role import Role
+        from app.models.associations import UserRoleLink
+        from app.schemas import RoleRead
+        statement = select(Role).join(UserRoleLink).where(UserRoleLink.user_id == user.id)
+        roles = session.exec(statement).all()
+        
+        # Convert Role objects to RoleRead objects
+        role_reads = [RoleRead.model_validate(role.model_dump()) for role in roles]
+        
         # Generate JWT token
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
@@ -255,7 +265,8 @@ async def verify_otp(
             access_token=access_token,
             token_type="bearer",
             user_id=str(user.id),
-            phone_number=user.phone
+            phone_number=user.phone,
+            roles=role_reads
         )
         
     except HTTPException:
