@@ -25,7 +25,21 @@ async def get_users(
     """Get all users with pagination."""
     statement = select(User).offset(skip).limit(limit)
     users = session.exec(statement).all()
-    return users
+    
+    # Handle users with empty or None names by setting a default value
+    processed_users = []
+    for user in users:
+        # Create a copy of user data
+        user_dict = user.model_dump()
+        
+        # Fix empty or None names
+        if not user_dict.get('name') or user_dict['name'].strip() == '':
+            user_dict['name'] = f"User {user_dict['phone'][-4:]}"  # Use last 4 digits of phone
+        
+        # Convert back to UserRead object for proper validation
+        processed_users.append(UserRead.model_validate(user_dict))
+    
+    return processed_users
 
 @router.get("/{user_id}", response_model=UserRead)
 async def get_user(

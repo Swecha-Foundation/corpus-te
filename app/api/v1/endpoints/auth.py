@@ -154,6 +154,22 @@ async def send_otp(
 ):
     """Send OTP to phone number via SMS"""
     try:
+        # Check if user exists
+        statement = select(User).where(User.phone == request.phone_number)
+        user = session.exec(statement).first()
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User with this phone number does not exist"
+            )
+        
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User account is inactive"
+            )
+        
         otp_service = OTPService(session)
         
         # Check rate limiting
@@ -206,38 +222,22 @@ async def verify_otp(
                 detail="Invalid or expired OTP"
             )
         
-        # Check if user exists, create if not
+        # Get user (user should exist since we checked in send-otp)
         statement = select(User).where(User.phone == request.phone_number)
         user = session.exec(statement).first()
         
         if not user:
-            # Create new user with phone number
-            from datetime import datetime
-            user = User(
-                phone=request.phone_number,
-                name="",  # Will be updated later
-                is_active=True,
-                has_given_consent=request.has_given_consent,  # Use consent from request
-                consent_given_at=datetime.utcnow() if request.has_given_consent else None
+            # This should not happen if send-otp was called first
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
             )
-            session.add(user)
-            session.flush()  # Get user ID
-            
-            # Auto-assign "user" role (id=2) to new users
-            from app.models.role import Role
-            from app.models.associations import UserRoleLink
-            
-            # Get the "user" role
-            user_role_statement = select(Role).where(Role.name == "user")
-            user_role = session.exec(user_role_statement).first()
-            
-            if user_role:
-                # Create role assignment
-                user_role_link = UserRoleLink(user_id=user.id, role_id=user_role.id)
-                session.add(user_role_link)
-            
-            session.commit()
-            session.refresh(user)
+        
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User account is inactive"
+            )
         
         # Update last login time
         from datetime import datetime
@@ -275,6 +275,22 @@ async def resend_otp(
 ):
     """Resend OTP to phone number"""
     try:
+        # Check if user exists (same as send-otp)
+        statement = select(User).where(User.phone == request.phone_number)
+        user = session.exec(statement).first()
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User with this phone number does not exist"
+            )
+        
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User account is inactive"
+            )
+        
         otp_service = OTPService(session)
         
         # Check rate limiting for resend
