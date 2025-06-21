@@ -165,3 +165,31 @@ class MessageResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     detail: str
+
+#contributions Schema
+class ContributionResponse(BaseModel):
+    id: UUID
+    size: int # in KB
+    category_id: UUID
+    reviewed: bool
+    title: str
+
+class ContirbutionMediaCountResponse(BaseModel):
+    text: int
+    audio: int
+    image: int
+    video: int
+
+class ContributionRead(BaseModel):
+    user_id: UUID
+    total_contributions: int
+    contributions_by_media_type: ContirbutionMediaCountResponse
+    audio_contributions: Optional[List[ContributionResponse]] = None
+    video_contributions: Optional[List[ContributionResponse]] = None
+    text_contributions: Optional[List[ContributionResponse]] = None
+    image_contributions: Optional[List[ContributionResponse]] = None
+
+class ContributionFilterRead(BaseModel):
+    user_id: UUID
+    total_contributions: int
+    contributions: Optional[List[ContributionResponse]] = None

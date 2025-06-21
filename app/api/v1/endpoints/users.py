@@ -7,8 +7,10 @@ from sqlmodel import select
 from app.db.session import SessionDep
 from app.models.user import User
 from app.models.role import Role
+from app.models.record import Record, MediaType
+
 from app.models.associations import UserRoleLink
-from app.schemas import UserRead, UserCreate, UserUpdate, MessageResponse, RoleRead, UserWithRoles
+from app.schemas import UserRead, UserCreate, UserUpdate, MessageResponse, RoleRead, UserWithRoles, ContributionResponse, ContirbutionMediaCountResponse, ContributionRead, ContributionFilterRead
 from app.core.exceptions import DuplicateEntry, UserNotFound
 from app.core.auth import get_password_hash
 from app.core.rbac_fastapi import create_rbac_dependency, require_admin, require_users_read, require_users_write, require_users_update, require_users_delete
@@ -328,3 +330,95 @@ async def remove_role_from_user(
     statement = select(Role).join(UserRoleLink).where(UserRoleLink.user_id == user_id)
     roles = session.exec(statement).all()
     return roles
+
+# Contributions endpoints
+@router.get("/{user_id}/contributions", response_model=ContributionRead)
+async def get_user_contributions(
+    user_id: UUID, 
+    session: SessionDep,
+    current_user: User = Depends(require_users_read())
+):
+    """Get all records submitted by an user."""
+    user = session.get(User, user_id)
+    if not user:
+        raise UserNotFound(str(user_id))
+    
+    # Get roles through association table
+    statement = select(Record).where(Record.user_id == user_id)
+    records = session.scalars(statement).all()
+    total_count = len(records)
+    # Group counts by media_type
+    counts_by_media = {
+        "text": 0,
+        "audio": 0,
+        "image": 0,
+        "video": 0,
+    }
+    audio_contributions = []
+    video_contributions = []
+    text_contributions = []
+    image_contributions = []
+    
+    for r in records:
+        counts_by_media[r.media_type] += 1
+        contribution = ContributionResponse(
+            id=r.uid,
+            size=r.file_size or 0,
+            category_id=r.category_id,
+            reviewed=r.reviewed,
+            title=r.title,
+        )
+        if r.media_type == "audio":
+            audio_contributions.append(contribution)
+        elif r.media_type == "video":
+            video_contributions.append(contribution)
+        elif r.media_type == "text":
+            text_contributions.append(contribution)
+        elif r.media_type == "image":
+            image_contributions.append(contribution)
+    
+    counts_obj = ContirbutionMediaCountResponse(**counts_by_media)
+        
+    return ContributionRead(
+        user_id=user_id,
+        total_contributions=total_count,
+        contributions_by_media_type=counts_obj,
+        audio_contributions=audio_contributions or None,
+        video_contributions=video_contributions or None,
+        text_contributions=text_contributions or None,
+        image_contributions=image_contributions or None,
+    )
+@router.get("/{user_id}/contributions/{media_type}", response_model=ContributionFilterRead)
+async def get_user_contributions(
+    user_id: UUID, 
+    session: SessionDep,
+    media_type: MediaType,
+    current_user: User = Depends(require_users_read())
+):
+    """Get all records submitted by an user."""
+    user = session.get(User, user_id)
+    if not user:
+        raise UserNotFound(str(user_id))
+    
+    # Get roles through association table
+    statement = select(Record).where(Record.user_id == user_id, Record.media_type == media_type)
+    records = session.scalars(statement).all()
+    total_count = len(records)
+
+    contributions = []
+    
+    for r in records:
+        contribution = ContributionResponse(
+            id=r.uid,
+            size=r.file_size or 0,
+            category_id=r.category_id,
+            reviewed=r.reviewed,
+            title=r.title,
+        )
+        contributions.append(contribution)
+            
+    return ContributionFilterRead(
+        user_id=user_id,
+        total_contributions=total_count,
+        contributions=contributions or None,
+    )
