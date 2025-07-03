@@ -13,7 +13,7 @@ from app.models.associations import UserRoleLink
 from app.schemas import UserRead, UserCreate, UserUpdate, MessageResponse, RoleRead, UserWithRoles, ContributionResponse, ContirbutionMediaCountResponse, ContributionRead, ContributionFilterRead
 from app.core.exceptions import DuplicateEntry, UserNotFound
 from app.core.auth import get_password_hash
-from app.core.rbac_fastapi import create_rbac_dependency, require_admin, require_users_read, require_users_write, require_users_update, require_users_delete
+from app.core.rbac_fastapi import create_rbac_dependency, require_admin, require_users_read, require_users_write, require_users_update, require_users_delete, get_current_active_user
 
 router = APIRouter()
 
@@ -336,14 +336,19 @@ async def remove_role_from_user(
 async def get_user_contributions(
     user_id: UUID, 
     session: SessionDep,
-    current_user: User = Depends(require_users_read())
+    current_user: User = Depends(get_current_active_user), 
 ):
-    """Get all records submitted by an user."""
+    """Get all records submitted by a user. Allow self-access or users with permission."""
     user = session.get(User, user_id)
     if not user:
         raise UserNotFound(str(user_id))
-    
     # Get roles through association table
+    # Allow if current_user is the user, or if they have permission
+    if current_user.id != user_id:
+        # Only allow if user has permission to read users
+        require_users_read_dep = require_users_read()
+        await require_users_read_dep(current_user)  # raises if not allowed
+
     statement = select(Record).where(Record.user_id == user_id)
     records = session.scalars(statement).all()
     total_count = len(records)
@@ -358,7 +363,7 @@ async def get_user_contributions(
     video_contributions = []
     text_contributions = []
     image_contributions = []
-    
+
     for r in records:
         counts_by_media[r.media_type] += 1
         contribution = ContributionResponse(
@@ -376,9 +381,9 @@ async def get_user_contributions(
             text_contributions.append(contribution)
         elif r.media_type == "image":
             image_contributions.append(contribution)
-    
+
     counts_obj = ContirbutionMediaCountResponse(**counts_by_media)
-        
+
     return ContributionRead(
         user_id=user_id,
         total_contributions=total_count,
@@ -388,25 +393,29 @@ async def get_user_contributions(
         text_contributions=text_contributions or None,
         image_contributions=image_contributions or None,
     )
+
 @router.get("/{user_id}/contributions/{media_type}", response_model=ContributionFilterRead)
-async def get_user_contributions(
+async def get_user_contributions_by_media(
     user_id: UUID, 
     session: SessionDep,
     media_type: MediaType,
-    current_user: User = Depends(require_users_read())
+    current_user: User = Depends(get_current_active_user),  # Allow any authenticated user
 ):
-    """Get all records submitted by an user."""
+    """Get all records submitted by a user for a specific media type. Allow self-access or users with permission."""
     user = session.get(User, user_id)
     if not user:
         raise UserNotFound(str(user_id))
-    
-    # Get roles through association table
+
+    if current_user.id != user_id:
+        require_users_read_dep = require_users_read()
+        await require_users_read_dep(current_user)
+
     statement = select(Record).where(Record.user_id == user_id, Record.media_type == media_type)
     records = session.scalars(statement).all()
     total_count = len(records)
 
     contributions = []
-    
+
     for r in records:
         contribution = ContributionResponse(
             id=r.uid,
@@ -416,7 +425,7 @@ async def get_user_contributions(
             title=r.title,
         )
         contributions.append(contribution)
-            
+        
     return ContributionFilterRead(
         user_id=user_id,
         total_contributions=total_count,
