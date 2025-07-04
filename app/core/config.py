@@ -40,7 +40,7 @@ class Settings:
     # JWT settings
     SECRET_KEY: str = os.getenv("APP_SECRET_KEY", "change-in-production")
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     
     # Logging
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "WARNING")
