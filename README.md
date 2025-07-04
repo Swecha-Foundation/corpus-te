@@ -450,14 +450,29 @@ The API uses JWT (JSON Web Tokens) for authentication:
 Example authentication flow:
 ```bash
 # Register a new user
-curl -X POST "http://localhost:8000/api/v1/auth/register" \
-  -H "Content-Type: application/json" \
-  -d '{"phone": "1234567890", "name": "John Doe", "password": "secure123"}'
+# role_ids 1 for admin
+curl -X 'POST' \
+  'http://localhost:8000/api/v1/users/' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "phone": "1234567890",
+  "name": "John",
+  "email": "John@example.com",
+  "gender": "male",
+  "date_of_birth": "2025-07-01",
+  "place": "Telangana",
+  "password": "password",
+  "role_ids": [
+    1
+  ],
+  "has_given_consent": true
+}'
 
 # Login to get token
 curl -X POST "http://localhost:8000/api/v1/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"phone": "1234567890", "password": "secure123"}'
+  -d '{"phone": "1234567890", "password": "password"}'
 
 # Use token in requests
 curl -X GET "http://localhost:8000/api/v1/users/" \
@@ -505,6 +520,12 @@ python setup_postgresql.py --test-connection
 4. **"Permission denied"**
    - Ensure PostgreSQL user has CREATE DATABASE privileges
    - Check PostgreSQL authentication settings in `pg_hba.conf`
+
+5. **"password authentication failed"**
+   - verify your database password
+   - for unix based systems like linux
+        sudo sed -i /etc/postgresql/17/main/pg_hba.conf  s/peer/scram-sha-256/g
+        sudo systemctl restart postgresql
 
 **Database Reset (Development Only):**
 ```bash
