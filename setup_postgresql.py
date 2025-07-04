@@ -15,11 +15,15 @@ Usage:
 """
 
 import os
+from dotenv import load_dotenv
 import sys
 import argparse
 from sqlalchemy import create_engine, text
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+
+load_dotenv()
+server_url = os.getenv("DATABASE_URL")
 
 # Add the app directory to the path
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), ".")))
@@ -30,7 +34,6 @@ def test_postgres_connection():
     """Test if PostgreSQL server is accessible."""
     try:
         # Connect to PostgreSQL server (without specifying a database)
-        server_url = f"postgresql://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOST}:{settings.DB_PORT}/postgres"
         engine = create_engine(server_url)
         
         with engine.connect() as conn:
@@ -52,7 +55,6 @@ def test_postgres_connection():
 def database_exists():
     """Check if the target database exists."""
     try:
-        server_url = f"postgresql://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOST}:{settings.DB_PORT}/postgres"
         engine = create_engine(server_url)
         
         with engine.connect() as conn:
@@ -112,7 +114,6 @@ def test_database_connection():
 def check_postgis_availability():
     """Check if PostGIS extension is available in PostgreSQL."""
     try:
-        server_url = f"postgresql://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOST}:{settings.DB_PORT}/postgres"
         engine = create_engine(server_url)
         
         with engine.connect() as conn:
