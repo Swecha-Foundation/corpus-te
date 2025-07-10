@@ -198,7 +198,7 @@ async def create_record(
 
 @router.post("/upload", response_model=RecordRead, status_code=201)
 async def upload_record(
-    session: SessionDep,
+    session: SessionDep, # type: ignore
     title: str = Form(...),
     description: Optional[str] = Form(None),
     category_id: str = Form(...),
@@ -263,15 +263,15 @@ async def upload_record(
         
         # Determine prefix based on media type
         prefix = f"{media_type.value}/" if media_type else "misc/"
-        metadata = {
-            "title": title,
-            "user_id": str(user_uuid),
-            "category_id": str(category_uuid),
-            "media_type": media_type.value if media_type else "unknown",
-            "record_uid": str(record_data.uid),
-            "original_filename": file.filename,
-            "upload_type": "user_upload"
-        }
+        # metadata = {
+        #     "title": title,
+        #     "user_id": str(user_uuid),
+        #     "category_id": str(category_uuid),
+        #     "media_type": media_type.value if media_type else "unknown",
+        #     "record_uid": str(record_data.uid),
+        #     "original_filename": file.filename,
+        #     "upload_type": "user_upload"
+        # }
         
         # Create a temporary UploadFile with the new filename if needed
         if use_uid_filename:
@@ -292,9 +292,9 @@ async def upload_record(
         else:
             upload_file = file
         
-        upload_result = await upload_file_to_hetzner(upload_file, prefix=prefix, metadata=metadata)
+        upload_result = await upload_file_to_hetzner(upload_file, prefix=prefix)
         file_url = upload_result["object_url"]
-        object_key = upload_result["object_key"]
+        upload_result["object_key"]
         actual_file_size = upload_result["file_size"]
         
     except Exception as e:
