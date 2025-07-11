@@ -46,7 +46,7 @@ class Settings:
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "WARNING")
     
     # File upload settings
-    MAX_FILE_SIZE: int = 100 * 1024 * 1024  # 100MB
+    MAX_FILE_SIZE: int = 10 * 1024 * 1024 * 1024  # 10GB
     ALLOWED_AUDIO_EXTENSIONS: set[str] = {".mp3", ".wav", ".m4a", ".ogg"}
     ALLOWED_VIDEO_EXTENSIONS: set[str] = {".mp4", ".avi", ".mov", ".mkv"}
     ALLOWED_IMAGE_EXTENSIONS: set[str] = {".jpg", ".jpeg", ".png", ".gif"}
