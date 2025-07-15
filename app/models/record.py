@@ -6,11 +6,12 @@ from datetime import datetime, timezone
 from uuid import UUID
 import enum
 from geoalchemy2 import Geometry
-from sqlalchemy import Column
+from sqlalchemy import Column, Integer
+
 
 if TYPE_CHECKING:
     from .user import User
-    from .category import Category
+    from .category import Category, Integer
 
 class MediaType(str, enum.Enum):
     text = "text"
@@ -30,6 +31,7 @@ class Record(SQLModel, table=True):
     file_url: Optional[str] = Field(default=None, max_length=500)
     file_name: Optional[str] = Field(default=None, max_length=255)
     file_size: Optional[int] = Field(default=None)
+    duration_seconds: Optional[int] = Field(default=None, sa_column=Column(Integer))
     
     status: str = Field(default="pending", max_length=20)  # pending/uploaded/failed
 

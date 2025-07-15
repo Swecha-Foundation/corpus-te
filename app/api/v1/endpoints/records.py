@@ -4,6 +4,8 @@ from sqlmodel import select
 from uuid import UUID
 import uuid
 import logging
+#import moviepy
+from moviepy import AudioFileClip, VideoFileClip
 
 from app.db.session import SessionDep
 from app.models.record import Record, MediaType
@@ -17,6 +19,8 @@ from app.utils.postgis_utils import (
 )
 from app.utils.hetzner_storage import upload_file_to_hetzner, delete_file_from_hetzner
 from app.utils.record_file_generator import RecordFileGenerator
+import tempfile
+import shutil
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -89,6 +93,22 @@ def get_record(
             result.location = Coordinates(latitude=coords[1], longitude=coords[0])
     
     return result
+
+
+def get_media_duration(file_path: str, media_type: str) -> int:
+    try:
+        if media_type == "audio":
+            clip = AudioFileClip(file_path)
+        elif media_type == "video":
+            clip = VideoFileClip(file_path)
+        else:
+            return 0
+        duration = int(clip.duration)
+        clip.close()
+        return duration
+    except Exception as e:
+        print("Error extracting duration:", e)
+        return 0
 
 @router.post("/", response_model=RecordRead, status_code=201)
 async def create_record(
@@ -198,7 +218,7 @@ async def create_record(
 
 @router.post("/upload", response_model=RecordRead, status_code=201)
 async def upload_record(
-    session: SessionDep, # type: ignore
+    session: SessionDep,
     title: str = Form(...),
     description: Optional[str] = Form(None),
     category_id: str = Form(...),
@@ -250,6 +270,14 @@ async def upload_record(
     
     session.add(record_data)
     session.flush()  # Get the UID for the record
+    # Step 1: Save the uploaded file to a temp file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=f"_{file.filename}") as tmp:
+        shutil.copyfileobj(file.file, tmp)
+        tmp_path = tmp.name
+    
+    # Step 2: Extract duration
+    duration_seconds = get_media_duration(tmp_path, media_type.value)
+    record_data.duration_seconds = duration_seconds
 
     # Upload file to Hetzner Object Storage
     try:
@@ -263,15 +291,15 @@ async def upload_record(
         
         # Determine prefix based on media type
         prefix = f"{media_type.value}/" if media_type else "misc/"
-        # metadata = {
-        #     "title": title,
-        #     "user_id": str(user_uuid),
-        #     "category_id": str(category_uuid),
-        #     "media_type": media_type.value if media_type else "unknown",
-        #     "record_uid": str(record_data.uid),
-        #     "original_filename": file.filename,
-        #     "upload_type": "user_upload"
-        # }
+        metadata = {
+            "title": title,
+            "user_id": str(user_uuid),
+            "category_id": str(category_uuid),
+            "media_type": media_type.value if media_type else "unknown",
+            "record_uid": str(record_data.uid),
+            "original_filename": file.filename,
+            "upload_type": "user_upload"
+        }
         
         # Create a temporary UploadFile with the new filename if needed
         if use_uid_filename:
@@ -292,9 +320,9 @@ async def upload_record(
         else:
             upload_file = file
         
-        upload_result = await upload_file_to_hetzner(upload_file, prefix=prefix)
+        upload_result = await upload_file_to_hetzner(upload_file, prefix=prefix, metadata=metadata)
         file_url = upload_result["object_url"]
-        upload_result["object_key"]
+        object_key = upload_result["object_key"]
         actual_file_size = upload_result["file_size"]
         
     except Exception as e:

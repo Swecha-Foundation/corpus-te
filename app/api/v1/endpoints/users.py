@@ -1,4 +1,6 @@
 # app/api/v1/endpoints/users.py
+from sqlmodel import func
+import uuid
 from typing import List
 from uuid import UUID
 from fastapi import APIRouter, HTTPException, status, Query, Depends
@@ -346,7 +348,8 @@ async def get_user_contributions(
     # Allow if current_user is the user, or if they have permission
     if current_user.id != user_id:
         # Only allow if user has permission to read users
-        require_users_read(current_user)
+        require_users_read_dep = require_users_read()
+        await require_users_read_dep(current_user)  # raises if not allowed
 
     statement = select(Record).where(Record.user_id == user_id)
     records = session.scalars(statement).all()
@@ -406,7 +409,8 @@ async def get_user_contributions_by_media(
         raise UserNotFound(str(user_id))
 
     if current_user.id != user_id:
-        require_users_read(current_user)
+        require_users_read_dep = require_users_read()
+        await require_users_read_dep(current_user)
 
     statement = select(Record).where(Record.user_id == user_id, Record.media_type == media_type)
     records = session.scalars(statement).all()
@@ -429,3 +433,33 @@ async def get_user_contributions_by_media(
         total_contributions=total_count,
         contributions=contributions or None,
     )
+@router.get("/{user_id}/duration-summary")
+async def get_user_duration_summary(
+    user_id: UUID,
+    session: SessionDep,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Return total audio and video duration in hours for a user."""
+    user = session.get(User, user_id)
+    if not user:
+        raise UserNotFound(str(user_id))
+
+    # Self-access or permission
+    if current_user.id != user_id:
+        require_users_read_dep = require_users_read()
+        await require_users_read_dep(current_user)
+
+    stmt = (
+        select(Record.media_type, func.sum(Record.duration_seconds))
+        .where(Record.user_id == user_id)
+        .group_by(Record.media_type)
+    )
+
+    results = session.exec(stmt).all()
+    duration_map = {media: duration or 0 for media, duration in results}
+
+    return {
+        "audio_hours": round(duration_map.get(MediaType.audio, 0) / 3600, 2),
+        "video_hours": round(duration_map.get(MediaType.video, 0) / 3600, 2),
+    }
+    
