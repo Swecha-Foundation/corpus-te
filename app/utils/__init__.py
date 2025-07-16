@@ -16,6 +16,8 @@ from .postgis_utils import (
     coords_to_point_wkt,
 )
 
+from .media_duration import get_media_duration
+
 __all__ = [
     "create_point_geometry",
     "create_point_wkt",
@@ -28,4 +30,5 @@ __all__ = [
     "calculate_distance_meters",
     "serialize_point_to_coords",
     "coords_to_point_wkt",
+    "get_media_duration",
 ]
