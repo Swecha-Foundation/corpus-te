@@ -189,6 +189,8 @@ class ContributionRead(BaseModel):
     video_contributions: Optional[List[ContributionResponse]] = None
     text_contributions: Optional[List[ContributionResponse]] = None
     image_contributions: Optional[List[ContributionResponse]] = None
+    audio_duration: int
+    video_duration: int
 
 class ContributionFilterRead(BaseModel):
     user_id: UUID

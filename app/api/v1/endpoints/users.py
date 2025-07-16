@@ -364,6 +364,9 @@ async def get_user_contributions(
     text_contributions = []
     image_contributions = []
 
+    audio_duration = 0
+    video_duration = 0
+
     for r in records:
         counts_by_media[r.media_type] += 1
         contribution = ContributionResponse(
@@ -382,6 +385,11 @@ async def get_user_contributions(
         elif r.media_type == "image":
             image_contributions.append(contribution)
 
+        if r.media_type == "audio":
+            audio_duration += r.duration_seconds or 0
+        elif r.media_type == "video":
+            video_duration += r.duration_seconds or 0
+
     counts_obj = ContirbutionMediaCountResponse(**counts_by_media)
 
     return ContributionRead(
@@ -392,6 +400,8 @@ async def get_user_contributions(
         video_contributions=video_contributions or None,
         text_contributions=text_contributions or None,
         image_contributions=image_contributions or None,
+        audio_duration=audio_duration,
+        video_duration=video_duration,
     )
 
 @router.get("/{user_id}/contributions/{media_type}", response_model=ContributionFilterRead)
