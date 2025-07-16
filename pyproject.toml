@@ -26,6 +26,7 @@ dependencies = [
     "geoalchemy2",
     "shapely>=2.1.1",
     "posthog",
+    "moviepy",
 ]
 
 [project.optional-dependencies]

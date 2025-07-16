@@ -46,7 +46,8 @@ RUN uv pip install --no-cache-dir --system \
     requests \
     geoalchemy2 \
     "shapely>=2.1.1" \
-    posthog
+    posthog \
+    moviepy
 
 # Copy the application code
 COPY . .
