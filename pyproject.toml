@@ -25,6 +25,7 @@ dependencies = [
     "requests",
     "geoalchemy2",
     "shapely>=2.1.1",
+    "posthog",
 ]
 
 [project.optional-dependencies]
