@@ -156,7 +156,7 @@ async def create_record(
                 media_type=record.media_type,
                 file_size_kb=file_size_kb,
                 custom_metadata={
-                    "title": record.title,
+                    # "title": record.title,
                     "description": record.description or "",
                     "user_id": str(record.user_id),
                     "category_id": str(record.category_id),
@@ -264,7 +264,7 @@ async def upload_record(
         # Determine prefix based on media type
         prefix = f"{media_type.value}/" if media_type else "misc/"
         metadata = {
-            "title": title,
+            # "title": title,
             "user_id": str(user_uuid),
             "category_id": str(category_uuid),
             "media_type": media_type.value if media_type else "unknown",
