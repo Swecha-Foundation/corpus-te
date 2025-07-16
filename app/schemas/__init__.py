@@ -157,6 +157,7 @@ class RecordRead(RecordBase):
     category_id: UUID
     created_at: datetime
     updated_at: datetime
+    duration_seconds: Optional[int] = Field(None, ge=0)  # Duration in seconds (read-only)
     model_config = ConfigDict(from_attributes=True)
 
 # Response schemas
