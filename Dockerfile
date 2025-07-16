@@ -45,7 +45,8 @@ RUN uv pip install --no-cache-dir --system \
     sqlalchemy \
     requests \
     geoalchemy2 \
-    "shapely>=2.1.1"
+    "shapely>=2.1.1" \
+    posthog
 
 # Copy the application code
 COPY . .
