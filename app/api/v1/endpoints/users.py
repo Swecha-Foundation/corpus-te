@@ -346,7 +346,8 @@ async def get_user_contributions(
     # Allow if current_user is the user, or if they have permission
     if current_user.id != user_id:
         # Only allow if user has permission to read users
-        require_users_read(current_user)
+        require_users_read_dep = require_users_read()
+        await require_users_read_dep(current_user)  # raises if not allowed
 
     statement = select(Record).where(Record.user_id == user_id)
     records = session.scalars(statement).all()
@@ -406,7 +407,8 @@ async def get_user_contributions_by_media(
         raise UserNotFound(str(user_id))
 
     if current_user.id != user_id:
-        require_users_read(current_user)
+        require_users_read_dep = require_users_read()
+        await require_users_read_dep(current_user)
 
     statement = select(Record).where(Record.user_id == user_id, Record.media_type == media_type)
     records = session.scalars(statement).all()
