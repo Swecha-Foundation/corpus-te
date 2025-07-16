@@ -70,4 +70,8 @@ class Settings:
     CELERY_TASK_TIME_LIMIT: int = int(os.getenv("CELERY_TASK_TIME_LIMIT", "600"))
     CELERY_TASK_SOFT_TIME_LIMIT: int = int(os.getenv("CELERY_TASK_SOFT_TIME_LIMIT", "300"))
 
+    # Posthog settings
+    POSTHOG_API_KEY: str = os.getenv("POSTHOG_API_KEY", "")
+    POSTHOG_API_HOST: str = os.getenv("POSTHOG_API_HOST", "")
+
 settings = Settings()

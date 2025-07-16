@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # Redis for Celery broker and result backend
@@ -52,6 +52,8 @@ services:
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - SECRET_KEY=${SECRET_KEY}
+      - POSTHOG_API_KEY=${POSTHOG_API_KEY}
+      - POSTHOG_API_HOST=${POSTHOG_API_HOST}
       - ENVIRONMENT=production
     depends_on:
       postgres:

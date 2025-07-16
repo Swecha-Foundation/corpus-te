@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from posthog import Posthog
 
 from app.core.config import settings
 from app.core.logging_config import setup_logging
@@ -13,6 +14,12 @@ from app.api.v1.api import api_router
 # Setup logging
 setup_logging(settings.LOG_LEVEL)
 logger = logging.getLogger(__name__)
+
+posthog = Posthog(
+  project_api_key=settings.POSTHOG_API_KEY,
+  host=settings.POSTHOG_API_HOST,
+  enable_exception_autocapture=True
+)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -61,6 +68,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
     """Handle unexpected errors."""
+    posthog.capture_exception(exc)
     logger.error(f"Unexpected error on {request.url}: {str(exc)}", exc_info=True)
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
