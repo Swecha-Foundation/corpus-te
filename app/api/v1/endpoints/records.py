@@ -17,6 +17,10 @@ from app.utils.postgis_utils import (
 )
 from app.utils.hetzner_storage import upload_file_to_hetzner, delete_file_from_hetzner
 from app.utils.record_file_generator import RecordFileGenerator
+from app.utils.media_duration import get_media_duration
+import tempfile
+import os
+import time
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -251,6 +255,37 @@ async def upload_record(
     session.add(record_data)
     session.flush()  # Get the UID for the record
 
+    # Save file to temp file and compute duration for audio/video files
+    duration_seconds = None
+    temp_file_path = None
+    start_time = time.time()
+    
+    try:
+        # Create a temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as temp_file:
+            temp_file_path = temp_file.name
+            # Read and write the uploaded file content
+            file_content = await file.read()
+            temp_file.write(file_content)
+            temp_file.flush()
+            
+            # Compute duration for audio/video files
+            if media_type.value in ["audio", "video"]:
+                try:
+                    duration_seconds = get_media_duration(temp_file_path, media_type.value)
+                    computation_time = time.time() - start_time
+                    logger.info(f"Successfully computed duration for file '{file.filename}': {duration_seconds} seconds (took {computation_time:.2f}s)")
+                except Exception as e:
+                    computation_time = time.time() - start_time
+                    logger.warning(f"Failed to compute duration for {file.filename}: {e} (took {computation_time:.2f}s)")
+                    duration_seconds = None
+    except Exception as e:
+        logger.error(f"Failed to save file to temp location: {e}")
+        if temp_file_path and os.path.exists(temp_file_path):
+            os.unlink(temp_file_path)
+        session.rollback()
+        raise HTTPException(status_code=500, detail=f"File processing failed: {str(e)}")
+    
     # Upload file to Hetzner Object Storage
     try:
         if use_uid_filename:
@@ -275,11 +310,9 @@ async def upload_record(
         
         # Create a temporary UploadFile with the new filename if needed
         if use_uid_filename:
-            # Read the file content
-            file_content = await file.read()
+            # Reset file pointer and create new UploadFile with UID-based filename
             file.file.seek(0)  # Reset file pointer
             
-            # Create new UploadFile with UID-based filename
             from fastapi import UploadFile
             from io import BytesIO
             temp_file = BytesIO(file_content)
@@ -302,11 +335,19 @@ async def upload_record(
         # Clean up the record if upload failed
         session.rollback()
         raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
+    finally:
+        # Clean up temp file
+        if temp_file_path and os.path.exists(temp_file_path):
+            try:
+                os.unlink(temp_file_path)
+            except Exception as e:
+                logger.warning(f"Failed to clean up temp file {temp_file_path}: {e}")
 
     # Update record with file information
     record_data.file_url = file_url
     record_data.file_name = filename
     record_data.file_size = actual_file_size
+    record_data.duration_seconds = duration_seconds
     record_data.status = "uploaded"  # Mark as uploaded since file upload succeeded
 
     # Handle PostGIS location if coordinates provided using raw SQL
