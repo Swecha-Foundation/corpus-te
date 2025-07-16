@@ -59,3 +59,6 @@ class Record(SQLModel, table=True):
         sa_relationship_kwargs={"foreign_keys": "[Record.reviewed_by]"}
     )
     category: Optional["Category"] = Relationship(back_populates="records")
+
+    # Duration in seconds (auto-calculated, read-only)
+    duration_seconds: Optional[int] = Field(default=None, ge=0)
