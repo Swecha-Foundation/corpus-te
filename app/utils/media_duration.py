@@ -5,7 +5,7 @@ Utility functions for computing media file durations using moviepy.
 from typing import Optional
 
 try:
-    from moviepy.editor import VideoFileClip, AudioFileClip
+    from moviepy import VideoFileClip, AudioFileClip
     MOVIEPY_AVAILABLE = True
 except ImportError:
     MOVIEPY_AVAILABLE = False
