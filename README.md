@@ -1,3 +1,7 @@
+*Project is migrated to https://code.swecha.org/corpus/corpus-backend*
+
+-------------------------
+
 # Telugu Corpus Collections API
 
 A FastAPI-based backend service for managing Telugu corpus collections, supporting text, audio, video, and image submissions with PostgreSQL database and JWT authentication.
